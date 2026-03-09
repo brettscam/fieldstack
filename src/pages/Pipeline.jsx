@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { BRAND, FONT, STAGES, getStageStyle, formatCurrency, formatFullCurrency, daysAgo } from "../lib/design";
 import Icons from "../components/Icons";
 import { useOpportunities, useMutation } from "../lib/hooks";
-import { TABLES } from "../lib/airtable";
+import { TABLES } from "../lib/supabase";
 
 function OpportunityCard({ opp, onEdit }) {
   const age = daysAgo(opp.CreatedDate);

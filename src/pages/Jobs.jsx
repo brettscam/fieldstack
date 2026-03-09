@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BRAND, FONT, formatFullCurrency } from "../lib/design";
 import Icons from "../components/Icons";
 import { useJobs, useMutation } from "../lib/hooks";
-import { TABLES } from "../lib/airtable";
+import { TABLES } from "../lib/supabase";
 
 function StatusBadge({ status }) {
   const styles = {

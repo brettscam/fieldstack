@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { BRAND, FONT } from "../lib/design";
 import Icons from "../components/Icons";
 import { useContacts, useMutation } from "../lib/hooks";
-import { TABLES } from "../lib/airtable";
+import { TABLES } from "../lib/supabase";
 
 function ContactModal({ contact, onClose, onSave }) {
   const isEdit = Boolean(contact?.id);

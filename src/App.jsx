@@ -6,6 +6,8 @@ import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
 import Contacts from "./pages/Contacts";
 import Schedule from "./pages/Schedule";
+import Login from "./pages/Login";
+import { useAuth } from "./lib/hooks";
 
 // Global styles injection
 const styleTag = document.createElement("style");
@@ -41,9 +43,30 @@ fontLink.rel = "stylesheet";
 if (!document.querySelector('link[href*="Nunito"]')) document.head.appendChild(fontLink);
 
 export default function App() {
+  const { user, loading, signIn, signUp, signOut } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "'Nunito', sans-serif", color: "#5F6368", fontSize: 14,
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Login onAuth={(mode, email, password) =>
+        mode === "signin" ? signIn(email, password) : signUp(email, password)
+      } />
+    );
+  }
+
   return (
     <BrowserRouter>
-      <Layout>
+      <Layout user={user} onSignOut={signOut}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/pipeline" element={<Pipeline />} />

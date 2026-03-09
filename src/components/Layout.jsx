@@ -155,7 +155,7 @@ function TopBar({ title, subtitle, actions }) {
   );
 }
 
-export default function Layout({ children }) {
+export default function Layout({ children, user, onSignOut }) {
   return (
     <div style={{
       display: "flex",

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { BRAND, FONT, formatFullCurrency, formatDate } from "../lib/design";
 import Icons from "../components/Icons";
 import { useRecord, useSchedulePhases } from "../lib/hooks";
-import { TABLES } from "../lib/airtable";
+import { TABLES } from "../lib/supabase";
 
 function InfoRow({ label, value, icon: Icon }) {
   return (
