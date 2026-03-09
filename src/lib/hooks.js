@@ -223,16 +223,39 @@ export function useAuth() {
       return;
     }
 
+    let subscription;
+    let timeout;
+
+    // Timeout fallback: if Supabase doesn't respond in 5s, fall back to mock mode
+    timeout = setTimeout(() => {
+      setUser({ id: "mock", email: "demo@fieldstack.app", name: "Demo User" });
+      setLoading(false);
+    }, 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout);
       setUser(session?.user || null);
+      setLoading(false);
+    }).catch(() => {
+      clearTimeout(timeout);
+      // Supabase unreachable or bad credentials — fall back to login screen
+      setUser(null);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    try {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user || null);
+      });
+      subscription = data?.subscription;
+    } catch {
+      // Ignore auth listener failures
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email, password) => {

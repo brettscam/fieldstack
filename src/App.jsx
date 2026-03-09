@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Pipeline from "./pages/Pipeline";
@@ -65,17 +66,19 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Layout user={user} onSignOut={signOut}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/pipeline" element={<Pipeline />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/:jobId" element={<JobDetail />} />
-          <Route path="/contacts" element={<Contacts />} />
-          <Route path="/schedule" element={<Schedule />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Layout user={user} onSignOut={signOut}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/:jobId" element={<JobDetail />} />
+            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/schedule" element={<Schedule />} />
+          </Routes>
+        </Layout>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
