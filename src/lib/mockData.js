@@ -1,0 +1,116 @@
+// FieldStack Mock Data — mirrors Airtable schema exactly
+// When Airtable is connected, this is only used as fallback
+
+export const MOCK_DATA = {
+  Contacts: [
+    { id: "rec001", Name: "Carlos Martinez", Email: "carlos@martinez.com", Phone: "(512) 555-0142", Company: "Martinez Family", Role: "Homeowner", Notes: "Referred by neighbor" },
+    { id: "rec002", Name: "Linda Chen", Email: "lchen@oakwoodhoa.org", Phone: "(512) 555-0198", Company: "Oakwood HOA", Role: "Board President", Notes: "" },
+    { id: "rec003", Name: "David Park", Email: "dpark@vertexprop.com", Phone: "(512) 555-0234", Company: "Vertex Properties", Role: "Project Manager", Notes: "Manages 3 properties" },
+    { id: "rec004", Name: "Sarah Williams", Email: "swilliams@hillcrestmed.com", Phone: "(512) 555-0301", Company: "Hillcrest Medical", Role: "Facilities Director", Notes: "Prefers email" },
+    { id: "rec005", Name: "James Rivera", Email: "jrivera@millbrook.gov", Phone: "(512) 555-0377", Company: "City of Millbrook", Role: "Parks Director", Notes: "Budget approved Q1" },
+    { id: "rec006", Name: "Maria Torres", Email: "mtorres@beaconcondos.com", Phone: "(512) 555-0412", Company: "Beacon Condos", Role: "Property Manager", Notes: "" },
+    { id: "rec007", Name: "Robert Kim", Email: "rkim@elmparkschool.edu", Phone: "(512) 555-0456", Company: "Elm Park School", Role: "IT Director", Notes: "Needs after-hours install" },
+    { id: "rec008", Name: "Jennifer Apex", Email: "japex@apexdev.com", Phone: "(512) 555-0501", Company: "Apex Development", Role: "VP Development", Notes: "Long-term client" },
+    { id: "rec009", Name: "Tom Bradley", Email: "tbradley@bradleyelectric.com", Phone: "(512) 555-0555", Company: "Bradley Electric", Role: "Owner", Notes: "Sub-contractor" },
+    { id: "rec010", Name: "Amanda Foster", Email: "afoster@fosterdesign.com", Phone: "(512) 555-0601", Company: "Foster Design Group", Role: "Lead Architect", Notes: "Works with Apex" },
+  ],
+
+  Companies: [
+    { id: "comp001", Name: "Martinez Family", Industry: "Residential", Address: "2847 Elm St, Austin TX", Phone: "(512) 555-0142", Website: "" },
+    { id: "comp002", Name: "Oakwood HOA", Industry: "HOA / Community", Address: "100 Oakwood Blvd, Austin TX", Phone: "(512) 555-0190", Website: "oakwoodhoa.org" },
+    { id: "comp003", Name: "Vertex Properties", Industry: "Commercial Real Estate", Address: "500 Congress Ave, Austin TX", Phone: "(512) 555-0230", Website: "vertexprop.com" },
+    { id: "comp004", Name: "Hillcrest Medical", Industry: "Healthcare", Address: "1200 Hillcrest Dr, Austin TX", Phone: "(512) 555-0300", Website: "hillcrestmed.com" },
+    { id: "comp005", Name: "City of Millbrook", Industry: "Government / Municipal", Address: "1 City Hall Plaza, Millbrook TX", Phone: "(512) 555-0370", Website: "millbrook.gov" },
+    { id: "comp006", Name: "Beacon Condos", Industry: "Residential HOA", Address: "88 Beacon St, Austin TX", Phone: "(512) 555-0410", Website: "" },
+    { id: "comp007", Name: "Elm Park School", Industry: "Education", Address: "450 Elm Park Rd, Austin TX", Phone: "(512) 555-0450", Website: "elmparkschool.edu" },
+    { id: "comp008", Name: "Apex Development", Industry: "Commercial Development", Address: "900 Sunset Ridge Dr, Austin TX", Phone: "(512) 555-0500", Website: "apexdev.com" },
+  ],
+
+  Opportunities: [
+    // Lead
+    { id: "opp001", Name: "Martinez Residence", Company: "Martinez Family", Contact: "Carlos Martinez", Value: 42000, Stage: "Lead", CreatedDate: "2026-03-06", ExpectedClose: "2026-04-15", Notes: "Kitchen + bathroom remodel" },
+    { id: "opp002", Name: "Oakwood Fence Install", Company: "Oakwood HOA", Contact: "Linda Chen", Value: 18500, Stage: "Lead", CreatedDate: "2026-03-02", ExpectedClose: "2026-05-01", Notes: "Community perimeter fence" },
+    { id: "opp003", Name: "Downtown Loft Remodel", Company: "Vertex Properties", Contact: "David Park", Value: 96000, Stage: "Lead", CreatedDate: "2026-03-08", ExpectedClose: "2026-06-01", Notes: "Full gut renovation, 2 units" },
+    { id: "opp004", Name: "Vertex Office Buildout", Company: "Vertex Properties", Contact: "David Park", Value: 45000, Stage: "Lead", CreatedDate: "2026-03-05", ExpectedClose: "2026-05-15", Notes: "New office suite" },
+    { id: "opp005", Name: "Martinez Guest House", Company: "Martinez Family", Contact: "Carlos Martinez", Value: 82000, Stage: "Lead", CreatedDate: "2026-03-07", ExpectedClose: "2026-07-01", Notes: "ADU construction" },
+    // Qualified
+    { id: "opp006", Name: "Hillcrest HVAC Overhaul", Company: "Hillcrest Medical", Contact: "Sarah Williams", Value: 134000, Stage: "Qualified", CreatedDate: "2026-02-25", ExpectedClose: "2026-04-30", Notes: "Replace rooftop units, zones 1-4" },
+    { id: "opp007", Name: "River Walk Landscaping", Company: "City of Millbrook", Contact: "James Rivera", Value: 67000, Stage: "Qualified", CreatedDate: "2026-02-17", ExpectedClose: "2026-04-15", Notes: "Phase 2 of park renovation" },
+    { id: "opp008", Name: "Millbrook Splash Pad", Company: "City of Millbrook", Contact: "James Rivera", Value: 89000, Stage: "Qualified", CreatedDate: "2026-02-20", ExpectedClose: "2026-05-01", Notes: "New water feature" },
+    // Proposal Sent
+    { id: "opp009", Name: "Beacon St. Security System", Company: "Beacon Condos", Contact: "Maria Torres", Value: 28000, Stage: "Proposal Sent", CreatedDate: "2026-03-05", ExpectedClose: "2026-03-30", Notes: "Cameras + access control" },
+    { id: "opp010", Name: "Elm Park AV Install", Company: "Elm Park School", Contact: "Robert Kim", Value: 156000, Stage: "Proposal Sent", CreatedDate: "2026-03-01", ExpectedClose: "2026-04-15", Notes: "Auditorium + 12 classrooms" },
+    // Won
+    { id: "opp011", Name: "Sunset Ridge Build-Out", Company: "Apex Development", Contact: "Jennifer Apex", Value: 142000, Stage: "Won", CreatedDate: "2026-01-15", ExpectedClose: "2026-03-01", Notes: "Commercial build-out, tenant improvement" },
+    { id: "opp012", Name: "Apex Parking Garage", Company: "Apex Development", Contact: "Jennifer Apex", Value: 56000, Stage: "Won", CreatedDate: "2026-02-01", ExpectedClose: "2026-03-10", Notes: "Lighting + electrical" },
+  ],
+
+  Jobs: [
+    {
+      id: "job001", JobId: "JOB-2026-0038", Name: "Sunset Ridge Build-Out",
+      Site: "1420 Sunset Ridge Dr", Crew: "Team Alpha", Phase: "Foundation",
+      Progress: 35, Status: "On Track", Value: 142000,
+      Company: "Apex Development", Contact: "Jennifer Apex",
+      StartDate: "2026-02-15", EndDate: "2026-05-30",
+      OpportunityId: "opp011",
+    },
+    {
+      id: "job002", JobId: "JOB-2026-0035", Name: "Beacon St. Security",
+      Site: "88 Beacon St, Unit 4", Crew: "Team Bravo", Phase: "Wiring",
+      Progress: 72, Status: "On Track", Value: 28000,
+      Company: "Beacon Condos", Contact: "Maria Torres",
+      StartDate: "2026-02-01", EndDate: "2026-03-20",
+      OpportunityId: "opp009",
+    },
+    {
+      id: "job003", JobId: "JOB-2026-0031", Name: "River Walk Phase 2",
+      Site: "River Walk Park, Sec B", Crew: "Team Charlie", Phase: "Grading",
+      Progress: 15, Status: "Delayed", Value: 67000,
+      Company: "City of Millbrook", Contact: "James Rivera",
+      StartDate: "2026-02-10", EndDate: "2026-04-30",
+      OpportunityId: "opp007",
+    },
+    {
+      id: "job004", JobId: "JOB-2026-0029", Name: "Apex Parking Garage",
+      Site: "900 Sunset Ridge Dr, Garage B", Crew: "Team Alpha", Phase: "Electrical Rough-In",
+      Progress: 55, Status: "On Track", Value: 56000,
+      Company: "Apex Development", Contact: "Jennifer Apex",
+      StartDate: "2026-01-20", EndDate: "2026-03-30",
+      OpportunityId: "opp012",
+    },
+    {
+      id: "job005", JobId: "JOB-2026-0027", Name: "Hillcrest HVAC Phase 1",
+      Site: "1200 Hillcrest Dr, Roof", Crew: "Team Delta", Phase: "Equipment Install",
+      Progress: 88, Status: "On Track", Value: 134000,
+      Company: "Hillcrest Medical", Contact: "Sarah Williams",
+      StartDate: "2026-01-05", EndDate: "2026-03-15",
+      OpportunityId: "opp006",
+    },
+  ],
+
+  "Schedule Phases": [
+    // Sunset Ridge Build-Out (job001)
+    { id: "sp001", JobId: "job001", PhaseName: "Site Prep", StartDate: "2026-02-15", EndDate: "2026-02-28", Duration: 10, Order: 1, Status: "Completed" },
+    { id: "sp002", JobId: "job001", PhaseName: "Foundation", StartDate: "2026-02-25", EndDate: "2026-03-21", Duration: 18, Order: 2, Status: "In Progress" },
+    { id: "sp003", JobId: "job001", PhaseName: "Framing", StartDate: "2026-03-17", EndDate: "2026-04-11", Duration: 20, Order: 3, Status: "Not Started" },
+    { id: "sp004", JobId: "job001", PhaseName: "Electrical", StartDate: "2026-03-28", EndDate: "2026-04-14", Duration: 12, Order: 4, Status: "Not Started" },
+    { id: "sp005", JobId: "job001", PhaseName: "Plumbing", StartDate: "2026-04-01", EndDate: "2026-04-14", Duration: 10, Order: 5, Status: "Not Started" },
+    { id: "sp006", JobId: "job001", PhaseName: "Drywall", StartDate: "2026-04-14", EndDate: "2026-05-02", Duration: 14, Order: 6, Status: "Not Started" },
+    { id: "sp007", JobId: "job001", PhaseName: "Finishes", StartDate: "2026-05-01", EndDate: "2026-05-22", Duration: 16, Order: 7, Status: "Not Started" },
+    { id: "sp008", JobId: "job001", PhaseName: "Punch List", StartDate: "2026-05-20", EndDate: "2026-05-30", Duration: 8, Order: 8, Status: "Not Started" },
+
+    // Beacon St. Security (job002)
+    { id: "sp009", JobId: "job002", PhaseName: "Survey & Plan", StartDate: "2026-02-01", EndDate: "2026-02-07", Duration: 5, Order: 1, Status: "Completed" },
+    { id: "sp010", JobId: "job002", PhaseName: "Wiring", StartDate: "2026-02-08", EndDate: "2026-03-01", Duration: 15, Order: 2, Status: "In Progress" },
+    { id: "sp011", JobId: "job002", PhaseName: "Equipment Install", StartDate: "2026-03-01", EndDate: "2026-03-10", Duration: 7, Order: 3, Status: "Not Started" },
+    { id: "sp012", JobId: "job002", PhaseName: "Testing & Handoff", StartDate: "2026-03-10", EndDate: "2026-03-20", Duration: 8, Order: 4, Status: "Not Started" },
+
+    // River Walk Phase 2 (job003)
+    { id: "sp013", JobId: "job003", PhaseName: "Mobilization", StartDate: "2026-02-10", EndDate: "2026-02-17", Duration: 5, Order: 1, Status: "Completed" },
+    { id: "sp014", JobId: "job003", PhaseName: "Grading", StartDate: "2026-02-17", EndDate: "2026-03-14", Duration: 18, Order: 2, Status: "In Progress" },
+    { id: "sp015", JobId: "job003", PhaseName: "Hardscape", StartDate: "2026-03-10", EndDate: "2026-03-31", Duration: 15, Order: 3, Status: "Not Started" },
+    { id: "sp016", JobId: "job003", PhaseName: "Planting", StartDate: "2026-03-28", EndDate: "2026-04-18", Duration: 15, Order: 4, Status: "Not Started" },
+    { id: "sp017", JobId: "job003", PhaseName: "Irrigation", StartDate: "2026-04-05", EndDate: "2026-04-20", Duration: 10, Order: 5, Status: "Not Started" },
+    { id: "sp018", JobId: "job003", PhaseName: "Walkthrough", StartDate: "2026-04-20", EndDate: "2026-04-30", Duration: 8, Order: 6, Status: "Not Started" },
+  ],
+};
