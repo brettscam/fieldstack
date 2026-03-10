@@ -19,7 +19,7 @@ function Sidebar() {
   return (
     <div style={{
       width: 232,
-      minHeight: "100vh",
+      height: "100%",
       background: BRAND.white,
       borderRight: `1px solid ${BRAND.border}`,
       display: "flex",
@@ -160,14 +160,15 @@ export default function Layout({ children, user, onSignOut }) {
   return (
     <div style={{
       display: "flex",
-      minHeight: "100vh",
+      height: "100vh",
       background: BRAND.surface,
       fontFamily: FONT,
+      overflow: "hidden",
     }}>
       <Sidebar />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <TopBar />
-        <div style={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
           {children}
         </div>
       </div>
