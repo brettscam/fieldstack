@@ -8,6 +8,7 @@ import JobDetail from "./pages/JobDetail";
 import Contacts from "./pages/Contacts";
 import Companies from "./pages/Companies";
 import Schedule from "./pages/Schedule";
+import OpportunityDetail from "./pages/OpportunityDetail";
 import Login from "./pages/Login";
 import { useAuth } from "./lib/hooks";
 
@@ -77,6 +78,7 @@ export default function App() {
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:jobId" element={<JobDetail />} />
+            <Route path="/opportunities/:oppId" element={<OpportunityDetail />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/companies" element={<Companies />} />
             <Route path="/schedule" element={<Schedule />} />

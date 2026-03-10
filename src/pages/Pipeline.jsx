@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { BRAND, FONT, STAGES, getStageStyle, formatCurrency, formatFullCurrency, daysAgo } from "../lib/design";
 import Icons from "../components/Icons";
-import { useOpportunities, useMutation, useEstimates } from "../lib/hooks";
+import { useOpportunities, useCompanies, useMutation, useEstimates } from "../lib/hooks";
 import { TABLES } from "../lib/supabase";
 
 function OpportunityCard({ opp, onEdit }) {
@@ -43,7 +44,95 @@ function OpportunityCard({ opp, onEdit }) {
   );
 }
 
-function NewOppModal({ stage, onClose, onSave }) {
+// Fuzzy match company autocomplete
+function CompanyAutocomplete({ value, onChange, companies, inputStyle }) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [warning, setWarning] = useState(null);
+
+  const suggestions = useMemo(() => {
+    if (!value || value.length < 2) return [];
+    const q = value.toLowerCase();
+    return companies.filter(c => c.Name.toLowerCase().includes(q) || levenshtein(c.Name.toLowerCase(), q) <= 2)
+      .sort((a, b) => {
+        const aExact = a.Name.toLowerCase().startsWith(q) ? 0 : 1;
+        const bExact = b.Name.toLowerCase().startsWith(q) ? 0 : 1;
+        return aExact - bExact;
+      }).slice(0, 5);
+  }, [value, companies]);
+
+  // Simple levenshtein for fuzzy matching
+  function levenshtein(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        matrix[i][j] = b[i - 1] === a[j - 1]
+          ? matrix[i - 1][j - 1]
+          : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  const handleBlur = () => {
+    setTimeout(() => setShowSuggestions(false), 200);
+    if (value && !companies.some(c => c.Name === value)) {
+      const close = companies.find(c => levenshtein(c.Name.toLowerCase(), value.toLowerCase()) <= 2);
+      if (close) setWarning(`Did you mean "${close.Name}"?`);
+      else setWarning(null);
+    } else {
+      setWarning(null);
+    }
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        style={inputStyle}
+        value={value}
+        onChange={e => { onChange(e.target.value); setWarning(null); }}
+        onFocus={() => setShowSuggestions(true)}
+        onBlur={handleBlur}
+        placeholder="Start typing..."
+      />
+      {showSuggestions && suggestions.length > 0 && (
+        <div style={{
+          position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+          background: BRAND.white, borderRadius: 8, border: `1px solid ${BRAND.border}`,
+          boxShadow: `0 4px 12px ${BRAND.shadowMd}`, marginTop: 2, maxHeight: 160, overflowY: "auto",
+        }}>
+          {suggestions.map(c => (
+            <div key={c.id} onMouseDown={() => { onChange(c.Name); setShowSuggestions(false); setWarning(null); }} style={{
+              padding: "8px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+              color: BRAND.textPrimary, fontFamily: FONT,
+              borderBottom: `1px solid ${BRAND.border}`,
+            }} className="fs-nav-item">
+              <div>{c.Name}</div>
+              <div style={{ fontSize: 10, color: BRAND.textTertiary, fontWeight: 500 }}>{c.Industry}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {warning && (
+        <div style={{
+          fontSize: 10, fontWeight: 600, color: BRAND.amber, marginTop: 2,
+          display: "flex", alignItems: "center", gap: 4,
+        }}>
+          <span>⚠</span> {warning}
+          <span
+            onMouseDown={() => { const match = companies.find(c => levenshtein(c.Name.toLowerCase(), value.toLowerCase()) <= 2); if (match) { onChange(match.Name); setWarning(null); } }}
+            style={{ color: BRAND.blue, cursor: "pointer", textDecoration: "underline" }}
+          >Use it</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NewOppModal({ stage, onClose, onSave, companies }) {
   const [form, setForm] = useState({ Name: "", Company: "", Contact: "", Value: "", Stage: stage, ExpectedClose: "", Notes: "" });
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
   const inputStyle = {
@@ -65,7 +154,7 @@ function NewOppModal({ stage, onClose, onSave }) {
           <div style={{ display: "flex", gap: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 4 }}>Company</label>
-              <input style={inputStyle} value={form.Company} onChange={e => set("Company", e.target.value)} />
+              <CompanyAutocomplete value={form.Company} onChange={v => set("Company", v)} companies={companies} inputStyle={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 4 }}>Contact</label>
@@ -204,7 +293,7 @@ function EstimatePanel({ opp, onClose }) {
 }
 
 // Scatter plot — bubble chart by close date and value
-function ScatterPlot({ opportunities }) {
+function ScatterPlot({ opportunities, onBubbleClick }) {
   const openOpps = opportunities.filter(o => o.Stage !== "Won" && o.Stage !== "Lost" && o.ExpectedClose);
 
   const { minDate, maxDate, maxVal } = useMemo(() => {
@@ -272,7 +361,7 @@ function ScatterPlot({ opportunities }) {
           const size = Math.max(20, Math.min(60, (opp.Value / maxVal) * 50 + 16));
           const stageStyle = getStageStyle(opp.Stage);
           return (
-            <div key={opp.id} title={`${opp.Name}\n${formatFullCurrency(opp.Value)}\n${opp.PropensityToClose || 30}% likely`} style={{
+            <div key={opp.id} title={`${opp.Name}\n${formatFullCurrency(opp.Value)}\n${opp.PropensityToClose || 30}% likely`} onClick={() => onBubbleClick && onBubbleClick(opp)} style={{
               position: "absolute",
               left: `calc(${Math.max(5, Math.min(90, x))}% - ${size / 2}px)`,
               top: `calc(${Math.max(5, Math.min(85, 100 - y))}% - ${size / 2}px)`,
@@ -295,10 +384,11 @@ function ScatterPlot({ opportunities }) {
 }
 
 export default function Pipeline() {
+  const navigate = useNavigate();
   const { records: opportunities, refresh } = useOpportunities();
+  const { records: companies } = useCompanies();
   const { create } = useMutation(TABLES.OPPORTUNITIES);
   const [showNewOpp, setShowNewOpp] = useState(null);
-  const [selectedOpp, setSelectedOpp] = useState(null);
   const [viewMode, setViewMode] = useState("kanban"); // kanban | list
   const [stageFilter, setStageFilter] = useState("All");
   const [search, setSearch] = useState("");
@@ -417,7 +507,7 @@ export default function Pipeline() {
       </div>
 
       {/* Scatter plot */}
-      <ScatterPlot opportunities={opportunities} />
+      <ScatterPlot opportunities={opportunities} onBubbleClick={(opp) => navigate(`/opportunities/${opp.id}`)} />
 
       {/* Kanban view */}
       {viewMode === "kanban" && (
@@ -444,7 +534,7 @@ export default function Pipeline() {
                 borderTop: `3px solid ${stage.color}`,
               }}>
                 {stage.items.map(opp => (
-                  <OpportunityCard key={opp.id} opp={opp} onEdit={setSelectedOpp} />
+                  <OpportunityCard key={opp.id} opp={opp} onEdit={(o) => navigate(`/opportunities/${o.id}`)} />
                 ))}
                 <div onClick={() => setShowNewOpp(stage.key)} style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -485,16 +575,16 @@ export default function Pipeline() {
                 borderBottom: i < filteredList.length - 1 ? `1px solid ${BRAND.border}` : "none",
                 animation: `fs-fadeUp 0.3s ease ${i * 0.02}s both`,
               }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: BRAND.textPrimary }}>{opp.Name}</div>
+                <div onClick={() => navigate(`/opportunities/${opp.id}`)} style={{ cursor: "pointer" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: BRAND.blue }}>{opp.Name}</div>
                   {opp.PropensityToClose != null && (
                     <div style={{ fontSize: 10, fontWeight: 600, color: opp.PropensityToClose >= 70 ? BRAND.green : opp.PropensityToClose >= 40 ? BRAND.amber : BRAND.textTertiary, marginTop: 1 }}>
                       {opp.PropensityToClose}% likely to close
                     </div>
                   )}
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: BRAND.textSecondary }}>{opp.Company}</div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: BRAND.textSecondary }}>{opp.Contact}</div>
+                <div onClick={() => navigate(`/companies?highlight=${encodeURIComponent(opp.Company)}`)} style={{ fontSize: 12, fontWeight: 500, color: BRAND.blue, cursor: "pointer" }}>{opp.Company}</div>
+                <div onClick={() => navigate(`/contacts?search=${encodeURIComponent(opp.Contact)}`)} style={{ fontSize: 12, fontWeight: 500, color: BRAND.blue, cursor: "pointer" }}>{opp.Contact}</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.textPrimary }}>{formatFullCurrency(opp.Value)}</div>
                 <div style={{ fontSize: 11, fontWeight: 500, color: BRAND.textSecondary }}>
                   {opp.ExpectedClose ? new Date(opp.ExpectedClose).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
@@ -527,7 +617,7 @@ export default function Pipeline() {
         </div>
       )}
 
-      {showNewOpp && <NewOppModal stage={showNewOpp} onClose={() => setShowNewOpp(null)} onSave={handleCreate} />}
+      {showNewOpp && <NewOppModal stage={showNewOpp} onClose={() => setShowNewOpp(null)} onSave={handleCreate} companies={companies} />}
       {emailOpp && <EmailNudgeModal opp={emailOpp} onClose={() => setEmailOpp(null)} />}
       {estimateOpp && <EstimatePanel opp={estimateOpp} onClose={() => setEstimateOpp(null)} />}
     </div>

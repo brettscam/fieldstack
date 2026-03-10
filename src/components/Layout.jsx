@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { BRAND, FONT } from "../lib/design";
+import { BRAND, FONT, formatCurrency } from "../lib/design";
 import Icons from "./Icons";
+import { useJobs, useContacts, useOpportunities, useCompanies } from "../lib/hooks";
 
 const NAV_ITEMS = [
   { icon: Icons.Dashboard, label: "Dashboard", path: "/" },
@@ -109,7 +110,130 @@ function Sidebar() {
   );
 }
 
-function TopBar({ title, subtitle, actions }) {
+function GlobalSearchResults({ query, onClose, onNavigate }) {
+  const { records: jobs } = useJobs();
+  const { records: contacts } = useContacts();
+  const { records: opportunities } = useOpportunities();
+  const { records: companies } = useCompanies();
+
+  const results = useMemo(() => {
+    if (!query || query.length < 2) return { jobs: [], contacts: [], opportunities: [], companies: [] };
+    const q = query.toLowerCase();
+    return {
+      jobs: jobs.filter(j =>
+        j.Name?.toLowerCase().includes(q) || j.JobId?.toLowerCase().includes(q) ||
+        j.Site?.toLowerCase().includes(q) || j.Company?.toLowerCase().includes(q)
+      ).slice(0, 4),
+      contacts: contacts.filter(c =>
+        c.Name?.toLowerCase().includes(q) || c.Email?.toLowerCase().includes(q) ||
+        c.Company?.toLowerCase().includes(q)
+      ).slice(0, 4),
+      opportunities: opportunities.filter(o =>
+        o.Name?.toLowerCase().includes(q) || o.Company?.toLowerCase().includes(q) ||
+        o.Contact?.toLowerCase().includes(q)
+      ).slice(0, 4),
+      companies: companies.filter(c =>
+        c.Name?.toLowerCase().includes(q) || c.Industry?.toLowerCase().includes(q)
+      ).slice(0, 4),
+    };
+  }, [query, jobs, contacts, opportunities, companies]);
+
+  const totalResults = results.jobs.length + results.contacts.length + results.opportunities.length + results.companies.length;
+
+  if (totalResults === 0) {
+    return (
+      <div style={{
+        position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4,
+        background: BRAND.white, borderRadius: 12, border: `1px solid ${BRAND.border}`,
+        boxShadow: `0 8px 24px ${BRAND.shadowMd}`, padding: 20, zIndex: 999,
+        textAlign: "center", color: BRAND.textTertiary, fontSize: 13, fontFamily: FONT,
+      }}>
+        No results for "{query}"
+      </div>
+    );
+  }
+
+  const Section = ({ title, icon: Icon, items, renderItem }) => {
+    if (items.length === 0) return null;
+    return (
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px" }}>
+          <Icon size={12} color={BRAND.textTertiary} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: BRAND.textTertiary, textTransform: "uppercase", letterSpacing: 0.5 }}>{title}</span>
+        </div>
+        {items.map(renderItem)}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{
+      position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4,
+      background: BRAND.white, borderRadius: 12, border: `1px solid ${BRAND.border}`,
+      boxShadow: `0 8px 24px ${BRAND.shadowMd}`, maxHeight: 400, overflowY: "auto",
+      zIndex: 999, padding: "8px 0", animation: "fs-fadeUp 0.15s ease both",
+    }}>
+      <Section title="Jobs" icon={Icons.Jobs} items={results.jobs} renderItem={(job) => (
+        <div key={job.id} onClick={() => { onNavigate(`/jobs/${job.id}`); onClose(); }} className="fs-nav-item" style={{
+          padding: "8px 12px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{job.Name}</div>
+            <div style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{job.JobId} · {job.Site}</div>
+          </div>
+          <span style={{
+            fontSize: 9, fontWeight: 600,
+            color: job.Status === "On Track" ? BRAND.green : job.Status === "Delayed" ? BRAND.red : BRAND.amber,
+            background: (job.Status === "On Track" ? BRAND.green : job.Status === "Delayed" ? BRAND.red : BRAND.amber) + "18",
+            padding: "2px 6px", borderRadius: 4,
+          }}>{job.Status}</span>
+        </div>
+      )} />
+      <Section title="Opportunities" icon={Icons.Pipeline} items={results.opportunities} renderItem={(opp) => (
+        <div key={opp.id} onClick={() => { onNavigate(`/opportunities/${opp.id}`); onClose(); }} className="fs-nav-item" style={{
+          padding: "8px 12px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{opp.Name}</div>
+            <div style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{opp.Company}</div>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>{formatCurrency(opp.Value)}</span>
+        </div>
+      )} />
+      <Section title="Contacts" icon={Icons.Contacts} items={results.contacts} renderItem={(contact) => (
+        <div key={contact.id} onClick={() => { onNavigate(`/contacts?search=${encodeURIComponent(contact.Name)}`); onClose(); }} className="fs-nav-item" style={{
+          padding: "8px 12px", cursor: "pointer",
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{contact.Name}</div>
+          <div style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{contact.Company} · {contact.Role}</div>
+        </div>
+      )} />
+      <Section title="Companies" icon={Icons.Building} items={results.companies} renderItem={(company) => (
+        <div key={company.id} onClick={() => { onNavigate(`/companies?highlight=${encodeURIComponent(company.Name)}`); onClose(); }} className="fs-nav-item" style={{
+          padding: "8px 12px", cursor: "pointer",
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{company.Name}</div>
+          <div style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{company.Industry}</div>
+        </div>
+      )} />
+    </div>
+  );
+}
+
+function TopBar() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowResults(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
     <div style={{
       height: 60,
@@ -122,20 +246,39 @@ function TopBar({ title, subtitle, actions }) {
       fontFamily: FONT,
       flexShrink: 0,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative" }} ref={searchRef}>
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
           background: BRAND.surface, borderRadius: 10,
           padding: "8px 16px", width: 320,
-          border: `1px solid ${BRAND.border}`,
+          border: `1px solid ${showResults && searchQuery.length >= 2 ? BRAND.blue : BRAND.border}`,
+          transition: "border-color 0.15s ease",
         }}>
           <Icons.Search size={16} color={BRAND.textTertiary} />
-          <input placeholder="Search jobs, contacts, sites..." style={{
-            border: "none", outline: "none", background: "transparent",
-            fontSize: 13, fontFamily: FONT, color: BRAND.textPrimary, width: "100%",
-            fontWeight: 500,
-          }} />
+          <input
+            placeholder="Search jobs, contacts, sites..."
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setShowResults(true); }}
+            onFocus={() => { if (searchQuery.length >= 2) setShowResults(true); }}
+            style={{
+              border: "none", outline: "none", background: "transparent",
+              fontSize: 13, fontFamily: FONT, color: BRAND.textPrimary, width: "100%",
+              fontWeight: 500,
+            }}
+          />
+          {searchQuery && (
+            <div onClick={() => { setSearchQuery(""); setShowResults(false); }} style={{ cursor: "pointer" }}>
+              <Icons.X size={14} color={BRAND.textTertiary} />
+            </div>
+          )}
         </div>
+        {showResults && searchQuery.length >= 2 && (
+          <GlobalSearchResults
+            query={searchQuery}
+            onClose={() => { setShowResults(false); setSearchQuery(""); }}
+            onNavigate={(path) => navigate(path)}
+          />
+        )}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <div style={{
@@ -150,7 +293,6 @@ function TopBar({ title, subtitle, actions }) {
             background: BRAND.red, border: `2px solid ${BRAND.white}`,
           }} />
         </div>
-        {actions}
       </div>
     </div>
   );
