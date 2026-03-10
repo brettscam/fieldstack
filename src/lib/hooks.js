@@ -19,8 +19,8 @@ const FIELD_MAP = {
     toDb: { Name: "name", Company: "company", Contact: "contact", Value: "value", Stage: "stage", CreatedDate: "created_date", ExpectedClose: "expected_close", Notes: "notes" },
   },
   [TABLES.JOBS]: {
-    toApp: { job_id: "JobId", name: "Name", site: "Site", crew: "Crew", phase: "Phase", progress: "Progress", status: "Status", value: "Value", company: "Company", contact: "Contact", start_date: "StartDate", end_date: "EndDate", opportunity_id: "OpportunityId" },
-    toDb: { JobId: "job_id", Name: "name", Site: "site", Crew: "crew", Phase: "phase", Progress: "progress", Status: "status", Value: "value", Company: "company", Contact: "contact", StartDate: "start_date", EndDate: "end_date", OpportunityId: "opportunity_id" },
+    toApp: { job_id: "JobId", name: "Name", site: "Site", crew: "Crew", phase: "Phase", progress: "Progress", status: "Status", value: "Value", company: "Company", contact: "Contact", start_date: "StartDate", end_date: "EndDate", opportunity_id: "OpportunityId", lat: "Lat", lng: "Lng" },
+    toDb: { JobId: "job_id", Name: "name", Site: "site", Crew: "crew", Phase: "phase", Progress: "progress", Status: "status", Value: "value", Company: "company", Contact: "contact", StartDate: "start_date", EndDate: "end_date", OpportunityId: "opportunity_id", Lat: "lat", Lng: "lng" },
   },
   [TABLES.SCHEDULE_PHASES]: {
     toApp: { job_id: "JobId", phase_name: "PhaseName", start_date: "StartDate", end_date: "EndDate", duration: "Duration", sort_order: "Order", status: "Status" },
@@ -241,6 +241,24 @@ export function useAllTeamMembers() {
     setRecords(MOCK_DATA["Team Members"] || []);
   }, []);
   return { records };
+}
+
+export function useProgressPhotos(jobId) {
+  const [records, setRecords] = useState([]);
+  useEffect(() => {
+    const all = MOCK_DATA["Progress Photos"] || [];
+    setRecords(jobId ? all.filter(r => r.JobId === jobId) : all);
+  }, [jobId]);
+  return { records, setRecords };
+}
+
+export function useAuditLog(jobId) {
+  const [records, setRecords] = useState([]);
+  useEffect(() => {
+    const all = MOCK_DATA["Audit Log"] || [];
+    setRecords(jobId ? all.filter(r => r.JobId === jobId) : all);
+  }, [jobId]);
+  return { records, setRecords };
 }
 
 export function useMilestones(jobId) {
