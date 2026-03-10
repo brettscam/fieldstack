@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { icon: Icons.Dashboard, label: "Dashboard", path: "/" },
   { icon: Icons.Pipeline, label: "Pipeline", path: "/pipeline" },
   { icon: Icons.Jobs, label: "Jobs", path: "/jobs" },
+  { icon: Icons.Building, label: "Companies", path: "/companies" },
   { icon: Icons.Contacts, label: "Contacts", path: "/contacts" },
   { icon: Icons.Calendar, label: "Schedule", path: "/schedule" },
 ];
