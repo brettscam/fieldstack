@@ -6,6 +6,7 @@ import Pipeline from "./pages/Pipeline";
 import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
 import Contacts from "./pages/Contacts";
+import Companies from "./pages/Companies";
 import Schedule from "./pages/Schedule";
 import Login from "./pages/Login";
 import { useAuth } from "./lib/hooks";
@@ -18,6 +19,8 @@ styleTag.textContent = `
   @keyframes fs-scaleIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
   @keyframes fs-pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
   @keyframes fs-barGrow { from { width:0%; } }
+  @keyframes fs-slideInRight { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes fs-fadeIn { from { opacity:0; } to { opacity:1; } }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { overflow: hidden; }
   .fs-hover-lift { transition: transform 0.18s ease, box-shadow 0.18s ease; }
@@ -75,6 +78,7 @@ export default function App() {
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:jobId" element={<JobDetail />} />
             <Route path="/contacts" element={<Contacts />} />
+            <Route path="/companies" element={<Companies />} />
             <Route path="/schedule" element={<Schedule />} />
           </Routes>
         </Layout>

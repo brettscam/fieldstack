@@ -208,6 +208,34 @@ export function useSchedulePhases(jobId) {
   return result;
 }
 
+// Mock-only hooks for new data
+export function useTeamMembers(jobId) {
+  const [records, setRecords] = useState([]);
+  useEffect(() => {
+    const all = MOCK_DATA["Team Members"] || [];
+    setRecords(jobId ? all.filter(r => r.JobId === jobId) : all);
+  }, [jobId]);
+  return { records, setRecords };
+}
+
+export function useEstimates(oppId) {
+  const [records, setRecords] = useState([]);
+  useEffect(() => {
+    const all = MOCK_DATA["Estimates"] || [];
+    setRecords(oppId ? all.filter(r => r.OpportunityId === oppId) : all);
+  }, [oppId]);
+  return { records };
+}
+
+export function useMilestones(jobId) {
+  const [records, setRecords] = useState([]);
+  useEffect(() => {
+    const all = MOCK_DATA["Milestones"] || [];
+    setRecords(jobId ? all.filter(r => r.JobId === jobId) : all);
+  }, [jobId]);
+  return { records };
+}
+
 // ============================================
 // Auth hooks
 // ============================================
