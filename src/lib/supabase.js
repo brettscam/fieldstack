@@ -15,6 +15,10 @@ try {
 export const supabase = supabaseClient;
 
 export function isConfigured() {
+  // Demo mode forces mock data even if Supabase is configured
+  if (typeof localStorage !== "undefined" && localStorage.getItem("fieldstack_demo") === "1") {
+    return false;
+  }
   return supabaseClient !== null;
 }
 
@@ -25,4 +29,10 @@ export const TABLES = {
   OPPORTUNITIES: "opportunities",
   JOBS: "jobs",
   SCHEDULE_PHASES: "schedule_phases",
+  TEAM_MEMBERS: "team_members",
+  MILESTONES: "milestones",
+  ESTIMATES: "estimates",
+  PROGRESS_PHOTOS: "progress_photos",
+  AUDIT_LOG: "audit_log",
+  SALES_TARGETS: "sales_targets",
 };

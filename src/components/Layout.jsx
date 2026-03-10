@@ -83,13 +83,19 @@ function Sidebar() {
 
       {/* Bottom */}
       <div style={{ padding: "12px 10px 16px", borderTop: `1px solid ${BRAND.border}` }}>
-        <div className="fs-nav-item" style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-        }}>
-          <Icons.Settings size={20} color={BRAND.textSecondary} />
-          <span style={{ fontSize: 14, fontWeight: 500, color: BRAND.textSecondary, fontFamily: FONT }}>Settings</span>
-        </div>
+        {(() => {
+          const isSettingsActive = location.pathname === "/settings";
+          return (
+            <div className="fs-nav-item" onClick={() => navigate("/settings")} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+              background: isSettingsActive ? BRAND.blueSoft : "transparent",
+            }}>
+              <Icons.Settings size={20} color={isSettingsActive ? BRAND.blue : BRAND.textSecondary} />
+              <span style={{ fontSize: 14, fontWeight: isSettingsActive ? 600 : 500, color: isSettingsActive ? BRAND.blue : BRAND.textSecondary, fontFamily: FONT }}>Settings</span>
+            </div>
+          );
+        })()}
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
           padding: "12px 12px 4px",

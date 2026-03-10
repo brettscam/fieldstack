@@ -9,6 +9,7 @@ import Contacts from "./pages/Contacts";
 import Companies from "./pages/Companies";
 import Schedule from "./pages/Schedule";
 import OpportunityDetail from "./pages/OpportunityDetail";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import { useAuth } from "./lib/hooks";
 
@@ -61,11 +62,20 @@ export default function App() {
     );
   }
 
+  const enterDemo = () => {
+    // Force mock mode — set a flag and reload to bypass auth
+    localStorage.setItem("fieldstack_demo", "1");
+    window.location.reload();
+  };
+
   if (!user) {
     return (
-      <Login onAuth={(mode, email, password) =>
-        mode === "signin" ? signIn(email, password) : signUp(email, password)
-      } />
+      <Login
+        onAuth={(mode, email, password) =>
+          mode === "signin" ? signIn(email, password) : signUp(email, password)
+        }
+        onDemo={enterDemo}
+      />
     );
   }
 
@@ -82,6 +92,7 @@ export default function App() {
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/companies" element={<Companies />} />
             <Route path="/schedule" element={<Schedule />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </Layout>
       </BrowserRouter>

@@ -23,8 +23,8 @@ const FIELD_MAP = {
     toDb: { JobId: "job_id", Name: "name", Site: "site", Crew: "crew", Phase: "phase", Progress: "progress", Status: "status", Value: "value", Company: "company", Contact: "contact", StartDate: "start_date", EndDate: "end_date", OpportunityId: "opportunity_id", Lat: "lat", Lng: "lng" },
   },
   [TABLES.SCHEDULE_PHASES]: {
-    toApp: { job_id: "JobId", phase_name: "PhaseName", start_date: "StartDate", end_date: "EndDate", duration: "Duration", sort_order: "Order", status: "Status" },
-    toDb: { JobId: "job_id", PhaseName: "phase_name", StartDate: "start_date", EndDate: "end_date", Duration: "duration", Order: "sort_order", Status: "status" },
+    toApp: { job_id: "JobId", phase_name: "PhaseName", start_date: "StartDate", end_date: "EndDate", duration: "Duration", sort_order: "Order", status: "Status", assigned_to: "AssignedTo" },
+    toDb: { JobId: "job_id", PhaseName: "phase_name", StartDate: "start_date", EndDate: "end_date", Duration: "duration", Order: "sort_order", Status: "status", AssignedTo: "assigned_to" },
   },
 };
 
@@ -279,7 +279,9 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isConfigured()) {
+    // Demo mode: skip auth, use mock data
+    const isDemo = localStorage.getItem("fieldstack_demo") === "1";
+    if (!isConfigured() || isDemo) {
       setUser({ id: "mock", email: "smithers@fieldstack.app", name: "Smithers" });
       setLoading(false);
       return;

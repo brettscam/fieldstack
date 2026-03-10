@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BRAND, FONT } from "../lib/design";
 import Icons from "../components/Icons";
 
-export default function Login({ onAuth }) {
+export default function Login({ onAuth, onDemo }) {
   const [mode, setMode] = useState("signin"); // signin | signup
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -131,6 +131,25 @@ export default function Login({ onAuth }) {
             {mode === "signin" ? "Sign up" : "Sign in"}
           </span>
         </div>
+
+        {/* Demo access */}
+        {onDemo && (
+          <div style={{ marginTop: 24, borderTop: `1px solid ${BRAND.border}`, paddingTop: 20, textAlign: "center" }}>
+            <button onClick={onDemo} style={{
+              width: "100%", padding: "12px", borderRadius: 10,
+              border: `1.5px solid ${BRAND.border}`,
+              background: BRAND.white, color: BRAND.textSecondary,
+              fontSize: 14, fontWeight: 600, fontFamily: FONT,
+              cursor: "pointer", display: "flex", alignItems: "center",
+              justifyContent: "center", gap: 8,
+              transition: "all 0.15s ease",
+            }} className="fs-view-btn">
+              <Icons.Hardhat size={18} color={BRAND.blue} />
+              <span>Explore Demo</span>
+              <span style={{ fontSize: 11, color: BRAND.textTertiary, fontWeight: 500 }}>No account needed</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
