@@ -185,6 +185,32 @@ const Icons = {
       <path d="M12 6v6l4 2" />
     </svg>
   ),
+  Camera: ({ size = 20, color = BRAND.textSecondary }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  ),
+  History: ({ size = 20, color = BRAND.textSecondary }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3v5h5" />
+      <path d="M3.05 13A9 9 0 1021 12.5" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  ),
+  Image: ({ size = 20, color = BRAND.textSecondary }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M21 15l-5-5L5 21" />
+    </svg>
+  ),
+  Send: ({ size = 20, color = BRAND.textSecondary }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  ),
 };
 
 export default Icons;

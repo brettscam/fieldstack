@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BRAND, FONT, formatFullCurrency, formatDate } from "../lib/design";
 import Icons from "../components/Icons";
-import { useRecord, useSchedulePhases, useTeamMembers, useMilestones } from "../lib/hooks";
+import { useRecord, useSchedulePhases, useTeamMembers, useMilestones, useProgressPhotos, useAuditLog } from "../lib/hooks";
 import { TABLES } from "../lib/supabase";
 
 function InfoRow({ label, value, icon: Icon, onClick }) {
@@ -213,14 +213,24 @@ function PhasePopover({ phase, color, teamMembers, onClose, onUpdatePhase, style
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <div style={{ flex: 1 }}>
             <label style={{ fontSize: 9, fontWeight: 600, color: BRAND.textTertiary, display: "block", marginBottom: 2 }}>Start</label>
-            <input type="date" defaultValue={phase.StartDate} onChange={e => onUpdatePhase(phase.id, { StartDate: e.target.value })} style={{
+            <input type="date" value={phase.StartDate} onChange={e => {
+              const newStart = e.target.value;
+              if (!newStart) return;
+              const days = Math.max(1, Math.ceil((new Date(phase.EndDate) - new Date(newStart)) / (1000 * 60 * 60 * 24)));
+              onUpdatePhase(phase.id, { StartDate: newStart, Duration: days });
+            }} style={{
               width: "100%", padding: "4px 6px", borderRadius: 5, border: `1px solid ${BRAND.border}`,
               fontSize: 11, fontFamily: FONT, background: BRAND.surface, outline: "none",
             }} />
           </div>
           <div style={{ flex: 1 }}>
             <label style={{ fontSize: 9, fontWeight: 600, color: BRAND.textTertiary, display: "block", marginBottom: 2 }}>End</label>
-            <input type="date" defaultValue={phase.EndDate} onChange={e => onUpdatePhase(phase.id, { EndDate: e.target.value })} style={{
+            <input type="date" value={phase.EndDate} onChange={e => {
+              const newEnd = e.target.value;
+              if (!newEnd) return;
+              const days = Math.max(1, Math.ceil((new Date(newEnd) - new Date(phase.StartDate)) / (1000 * 60 * 60 * 24)));
+              onUpdatePhase(phase.id, { EndDate: newEnd, Duration: days });
+            }} style={{
               width: "100%", padding: "4px 6px", borderRadius: 5, border: `1px solid ${BRAND.border}`,
               fontSize: 11, fontFamily: FONT, background: BRAND.surface, outline: "none",
             }} />
@@ -239,7 +249,9 @@ function GanttChart({ phases, milestones, teamMembers, onUpdatePhase, onAddPhase
   const [popover, setPopover] = useState(null); // { phaseId, x, y }
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [showCustom, setShowCustom] = useState(false);
+  const [dragging, setDragging] = useState(null); // { phaseId, type: "move"|"resizeEnd"|"resizeStart", startX, origStart, origEnd }
   const containerRef = useRef(null);
+  const barAreaRef = useRef(null);
 
   if (!phases.length) return (
     <div style={{ padding: 40, textAlign: "center", color: BRAND.textTertiary, fontSize: 14, fontFamily: FONT }}>
@@ -315,6 +327,73 @@ function GanttChart({ phases, milestones, teamMembers, onUpdatePhase, onAddPhase
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [popover]);
+
+  // Drag handlers for Gantt bars
+  const hasDraggedRef = useRef(false);
+
+  useEffect(() => {
+    if (!dragging) return;
+
+    const handleMouseMove = (e) => {
+      const barArea = barAreaRef.current;
+      if (!barArea) return;
+      const rect = barArea.getBoundingClientRect();
+      const barWidth = rect.width;
+      const dx = e.clientX - dragging.startX;
+      // Only activate drag after 3px threshold
+      if (Math.abs(dx) < 3) return;
+      hasDraggedRef.current = true;
+
+      const daysDelta = Math.round((dx / barWidth) * totalDays);
+      if (daysDelta === 0) return;
+
+      const origStart = new Date(dragging.origStart);
+      const origEnd = new Date(dragging.origEnd);
+
+      if (dragging.type === "move") {
+        const newStart = new Date(origStart.getTime() + daysDelta * 86400000);
+        const newEnd = new Date(origEnd.getTime() + daysDelta * 86400000);
+        onUpdatePhase(dragging.phaseId, {
+          StartDate: newStart.toISOString().split("T")[0],
+          EndDate: newEnd.toISOString().split("T")[0],
+        });
+      } else if (dragging.type === "resizeEnd") {
+        const newEnd = new Date(origEnd.getTime() + daysDelta * 86400000);
+        if (newEnd > origStart) {
+          const days = Math.max(1, Math.ceil((newEnd - origStart) / 86400000));
+          onUpdatePhase(dragging.phaseId, { EndDate: newEnd.toISOString().split("T")[0], Duration: days });
+        }
+      } else if (dragging.type === "resizeStart") {
+        const newStart = new Date(origStart.getTime() + daysDelta * 86400000);
+        if (newStart < origEnd) {
+          const days = Math.max(1, Math.ceil((origEnd - newStart) / 86400000));
+          onUpdatePhase(dragging.phaseId, { StartDate: newStart.toISOString().split("T")[0], Duration: days });
+        }
+      }
+    };
+
+    const handleMouseUp = () => setDragging(null);
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragging, totalDays, onUpdatePhase]);
+
+  const startDrag = (e, phase, type) => {
+    e.stopPropagation();
+    e.preventDefault();
+    hasDraggedRef.current = false;
+    setDragging({
+      phaseId: phase.id,
+      type,
+      startX: e.clientX,
+      origStart: phase.StartDate,
+      origEnd: phase.EndDate,
+    });
+  };
 
   return (
     <div ref={containerRef} style={{ position: "relative" }} onClick={() => setPopover(null)}>
@@ -487,40 +566,55 @@ function GanttChart({ phases, milestones, teamMembers, onUpdatePhase, onAddPhase
               </div>
 
               {/* Bar area */}
-              <div style={{ flex: 1, position: "relative", height: "100%" }}>
-                <div data-popover onClick={(e) => handlePillClick(e, phase)} style={{
+              <div ref={i === 0 ? barAreaRef : undefined} style={{ flex: 1, position: "relative", height: "100%" }}>
+                <div data-popover style={{
                   position: "absolute",
                   left: `${startOffset}%`,
                   width: `${widthPct}%`,
                   top: 8, height: 28, borderRadius: 6,
                   background: color + "18",
                   border: `1.5px solid ${color}55`,
-                  overflow: "hidden",
+                  overflow: "visible",
                   display: "flex", alignItems: "center", paddingLeft: 8, gap: 6,
-                  cursor: "pointer",
-                  transition: "box-shadow 0.15s ease",
+                  cursor: dragging ? "grabbing" : "grab",
+                  transition: dragging ? "none" : "box-shadow 0.15s ease",
                   boxShadow: popover?.phaseId === phase.id ? `0 2px 8px ${color}33` : "none",
+                  userSelect: "none",
                 }}>
+                  {/* Left resize handle */}
+                  <div onMouseDown={(e) => startDrag(e, phase, "resizeStart")} style={{
+                    position: "absolute", left: -2, top: 0, bottom: 0, width: 6,
+                    cursor: "ew-resize", zIndex: 5, borderRadius: "6px 0 0 6px",
+                  }} />
+                  {/* Main bar body — click to open popover, drag to move */}
+                  <div onMouseDown={(e) => { if (e.button === 0) startDrag(e, phase, "move"); }}
+                    onClick={(e) => { if (!hasDraggedRef.current) handlePillClick(e, phase); }}
+                    style={{ position: "absolute", inset: 0, borderRadius: 6, zIndex: 2 }} />
                   {/* Fill */}
                   <div style={{
                     position: "absolute", left: 0, top: 0, bottom: 0,
                     width: isComplete ? "100%" : isInProgress ? "50%" : "0%",
                     background: color + "33", borderRadius: "6px 0 0 6px",
-                    transition: "width 0.5s ease",
+                    transition: "width 0.5s ease", pointerEvents: "none",
                   }} />
                   {/* Duration */}
-                  <span style={{ position: "relative", zIndex: 1, fontSize: 10, fontWeight: 700, color: color, fontFamily: FONT }}>
+                  <span style={{ position: "relative", zIndex: 1, fontSize: 10, fontWeight: 700, color: color, fontFamily: FONT, pointerEvents: "none" }}>
                     {phase.Duration}d
                   </span>
                   {/* Date range on wider bars */}
                   {widthPct > 8 && (
                     <span style={{
                       position: "relative", zIndex: 1, fontSize: 9, fontWeight: 500, color: color + "AA", fontFamily: FONT,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", pointerEvents: "none",
                     }}>
                       {new Date(phase.StartDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {new Date(phase.EndDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </span>
                   )}
+                  {/* Right resize handle */}
+                  <div onMouseDown={(e) => startDrag(e, phase, "resizeEnd")} style={{
+                    position: "absolute", right: -2, top: 0, bottom: 0, width: 6,
+                    cursor: "ew-resize", zIndex: 5, borderRadius: "0 6px 6px 0",
+                  }} />
                 </div>
               </div>
             </div>
@@ -731,6 +825,268 @@ function JobMap({ job }) {
   );
 }
 
+// Progress Photos section
+function PhotosSection({ photos, onAddPhoto }) {
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadForm, setUploadForm] = useState({ Caption: "", Phase: "" });
+  const sorted = [...photos].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+  // Mock color generator based on thumbnail string
+  const photoColor = (thumb) => {
+    const colors = [BRAND.blue, BRAND.green, BRAND.purple, BRAND.amber, BRAND.red];
+    let hash = 0;
+    for (let i = 0; i < thumb.length; i++) hash = thumb.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  return (
+    <div style={{
+      background: BRAND.white, borderRadius: 14, border: `1px solid ${BRAND.border}`,
+      padding: "20px 24px", marginBottom: 20,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>Progress Photos</div>
+          <div style={{ fontSize: 12, color: BRAND.textTertiary, fontFamily: FONT, fontWeight: 500, marginTop: 2 }}>
+            {photos.length} photos from the field
+          </div>
+        </div>
+        <button onClick={() => setShowUpload(!showUpload)} style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "7px 14px", borderRadius: 8, border: `1px solid ${BRAND.border}`,
+          background: showUpload ? BRAND.blueSoft : BRAND.white, fontSize: 12, fontWeight: 600, fontFamily: FONT,
+          color: BRAND.blue, cursor: "pointer",
+        }} className="fs-view-btn">
+          <Icons.Camera size={14} color={BRAND.blue} /> {showUpload ? "Cancel" : "Add Photo"}
+        </button>
+      </div>
+
+      {/* Mobile-friendly upload form */}
+      {showUpload && (
+        <div style={{
+          padding: 16, borderRadius: 12, border: `1.5px dashed ${BRAND.blue}44`,
+          background: BRAND.blueSoft + "44", marginBottom: 16,
+        }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {/* Drop zone / file picker */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "20px 16px", borderRadius: 10, border: `1.5px dashed ${BRAND.border}`,
+              background: BRAND.white, cursor: "pointer",
+            }} onClick={() => {/* file input trigger in real app */}}>
+              <Icons.Camera size={20} color={BRAND.blue} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>
+                  Tap to take photo or choose file
+                </div>
+                <div style={{ fontSize: 11, color: BRAND.textTertiary, fontFamily: FONT, marginTop: 2 }}>
+                  Supports JPG, PNG up to 10MB
+                </div>
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 3, fontFamily: FONT }}>Caption / Notes</label>
+              <textarea value={uploadForm.Caption} onChange={e => setUploadForm(prev => ({ ...prev, Caption: e.target.value }))} placeholder="What's happening on site?" style={{
+                width: "100%", padding: "8px 12px", borderRadius: 8, border: `1px solid ${BRAND.border}`,
+                fontSize: 13, fontFamily: FONT, background: BRAND.white, outline: "none", minHeight: 60, resize: "vertical",
+              }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 3, fontFamily: FONT }}>Phase (optional)</label>
+              <input value={uploadForm.Phase} onChange={e => setUploadForm(prev => ({ ...prev, Phase: e.target.value }))} placeholder="e.g., Foundation" style={{
+                width: "100%", padding: "8px 12px", borderRadius: 8, border: `1px solid ${BRAND.border}`,
+                fontSize: 13, fontFamily: FONT, background: BRAND.white, outline: "none",
+              }} />
+            </div>
+            <button onClick={() => {
+              if (uploadForm.Caption) {
+                onAddPhoto({
+                  id: "ph_" + Math.random().toString(36).slice(2, 8),
+                  Caption: uploadForm.Caption,
+                  Phase: uploadForm.Phase,
+                  UploadedBy: "Smithers",
+                  Date: new Date().toISOString().split("T")[0],
+                  Thumbnail: "new-upload",
+                  Url: null,
+                });
+                setUploadForm({ Caption: "", Phase: "" });
+                setShowUpload(false);
+              }
+            }} style={{
+              padding: "10px 16px", borderRadius: 8, border: "none",
+              background: BRAND.blue, fontSize: 13, fontWeight: 600, fontFamily: FONT,
+              color: BRAND.white, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, justifyContent: "center",
+            }}>
+              <Icons.Send size={14} color={BRAND.white} /> Submit Check-in
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Photo grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+        {sorted.map(photo => {
+          const bg = photoColor(photo.Thumbnail);
+          return (
+            <div key={photo.id} style={{
+              borderRadius: 10, overflow: "hidden", border: `1px solid ${BRAND.border}`,
+            }}>
+              {/* Placeholder image area */}
+              <div style={{
+                height: 120, background: `linear-gradient(135deg, ${bg}22, ${bg}44)`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                position: "relative",
+              }}>
+                <Icons.Image size={32} color={bg + "66"} />
+                {photo.Phase && (
+                  <div style={{
+                    position: "absolute", top: 6, left: 6,
+                    fontSize: 9, fontWeight: 700, color: bg, background: BRAND.white,
+                    padding: "2px 6px", borderRadius: 4, fontFamily: FONT,
+                  }}>{photo.Phase}</div>
+                )}
+              </div>
+              <div style={{ padding: "8px 10px" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT, lineHeight: 1.3 }}>
+                  {photo.Caption}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                  <span style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{photo.UploadedBy}</span>
+                  <span style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{formatDate(photo.Date)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {photos.length === 0 && (
+        <div style={{ padding: 30, textAlign: "center", color: BRAND.textTertiary, fontSize: 13, fontFamily: FONT }}>
+          No photos yet — tap "Add Photo" to submit a field check-in
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Field Audit / Revision History
+function AuditLogSection({ auditLog }) {
+  const sorted = [...auditLog].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+  const actionIcons = {
+    status_change: { icon: Icons.Edit, color: BRAND.blue },
+    phase_update: { icon: Icons.Timeline, color: BRAND.purple },
+    phase_complete: { icon: Icons.Check, color: BRAND.green },
+    assignment: { icon: Icons.Users, color: BRAND.blue },
+    flag_added: { icon: Icons.Clock, color: BRAND.amber },
+    schedule_change: { icon: Icons.Calendar, color: BRAND.red },
+    milestone: { icon: Icons.Check, color: BRAND.green },
+  };
+
+  const actionLabels = {
+    status_change: "Status Changed",
+    phase_update: "Phase Updated",
+    phase_complete: "Phase Completed",
+    assignment: "Assignment Changed",
+    flag_added: "Flag Added",
+    schedule_change: "Schedule Modified",
+    milestone: "Milestone Reached",
+  };
+
+  return (
+    <div style={{
+      background: BRAND.white, borderRadius: 14, border: `1px solid ${BRAND.border}`,
+      padding: "20px 24px", marginBottom: 20,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <Icons.History size={16} color={BRAND.textSecondary} />
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>Field Audit / Revision History</div>
+          <div style={{ fontSize: 12, color: BRAND.textTertiary, fontFamily: FONT, fontWeight: 500, marginTop: 2 }}>
+            {auditLog.length} changes tracked
+          </div>
+        </div>
+      </div>
+
+      <div style={{ position: "relative", paddingLeft: 28 }}>
+        <div style={{ position: "absolute", left: 10, top: 6, bottom: 6, width: 2, background: BRAND.border }} />
+        {sorted.map(entry => {
+          const ai = actionIcons[entry.Action] || { icon: Icons.Edit, color: BRAND.textTertiary };
+          const IconComp = ai.icon;
+          const dateObj = new Date(entry.Date);
+          const timeStr = dateObj.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+          const dateStr = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+          return (
+            <div key={entry.id} style={{ display: "flex", gap: 12, marginBottom: 14, position: "relative" }}>
+              <div style={{
+                position: "absolute", left: -24, top: 2,
+                width: 18, height: 18, borderRadius: "50%",
+                background: ai.color + "18", border: `1.5px solid ${ai.color}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <IconComp size={9} color={ai.color} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: ai.color,
+                    background: ai.color + "14", padding: "1px 6px", borderRadius: 3, fontFamily: FONT,
+                  }}>{actionLabels[entry.Action] || entry.Action}</span>
+                  <span style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{dateStr} at {timeStr}</span>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT, marginTop: 3 }}>
+                  {entry.Field}
+                </div>
+                {(entry.OldValue || entry.NewValue) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                    {entry.OldValue && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 500, color: BRAND.red,
+                        background: BRAND.redSoft, padding: "1px 6px", borderRadius: 3, fontFamily: FONT,
+                        textDecoration: "line-through",
+                      }}>{entry.OldValue}</span>
+                    )}
+                    {entry.OldValue && entry.NewValue && (
+                      <span style={{ fontSize: 10, color: BRAND.textTertiary }}>→</span>
+                    )}
+                    {entry.NewValue && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 600, color: BRAND.green,
+                        background: BRAND.greenSoft, padding: "1px 6px", borderRadius: 3, fontFamily: FONT,
+                      }}>{entry.NewValue}</span>
+                    )}
+                  </div>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                  <div style={{
+                    width: 14, height: 14, borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.purple})`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 6, fontWeight: 700, color: BRAND.white,
+                  }}>{entry.ChangedBy.split(" ").map(n => n[0]).join("")}</div>
+                  <span style={{ fontSize: 10, fontWeight: 500, color: BRAND.textSecondary, fontFamily: FONT }}>{entry.ChangedBy}</span>
+                </div>
+                {entry.Notes && (
+                  <div style={{ fontSize: 11, color: BRAND.textTertiary, fontFamily: FONT, marginTop: 3, fontStyle: "italic" }}>
+                    {entry.Notes}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {auditLog.length === 0 && (
+        <div style={{ padding: 30, textAlign: "center", color: BRAND.textTertiary, fontSize: 13, fontFamily: FONT }}>
+          No audit history yet
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Add phase modal
 function AddPhaseModal({ onClose, onSave, nextOrder }) {
   const [form, setForm] = useState({ PhaseName: "", StartDate: "", EndDate: "" });
@@ -782,6 +1138,8 @@ export default function JobDetail() {
   const { records: phases, setRecords: setPhases } = useSchedulePhases(jobId);
   const { records: teamMembers } = useTeamMembers(jobId);
   const { records: milestones } = useMilestones(jobId);
+  const { records: photos, setRecords: setPhotos } = useProgressPhotos(jobId);
+  const { records: auditLog } = useAuditLog(jobId);
   const [showAddPhase, setShowAddPhase] = useState(false);
   const [activeTab, setActiveTab] = useState("schedule");
 
@@ -897,8 +1255,10 @@ export default function JobDetail() {
       <div style={{ display: "flex", gap: 4, marginBottom: 20, background: BRAND.white, borderRadius: 10, padding: 3, border: `1px solid ${BRAND.border}`, width: "fit-content" }}>
         {[
           { key: "schedule", label: "Schedule", icon: Icons.Timeline },
+          { key: "photos", label: `Photos (${photos.length})`, icon: Icons.Camera },
           { key: "team", label: `Team (${teamMembers.length})`, icon: Icons.Users },
           { key: "activity", label: `Activity (${milestones.length})`, icon: Icons.Clock },
+          { key: "audit", label: "Audit Log", icon: Icons.History },
         ].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             display: "flex", alignItems: "center", gap: 6,
@@ -933,8 +1293,10 @@ export default function JobDetail() {
         </div>
       )}
 
+      {activeTab === "photos" && <PhotosSection photos={photos} onAddPhoto={(photo) => setPhotos(prev => [...prev, { ...photo, JobId: jobId }])} />}
       {activeTab === "team" && <TeamSection members={teamMembers} />}
       {activeTab === "activity" && <MilestonesSection milestones={milestones} />}
+      {activeTab === "audit" && <AuditLogSection auditLog={auditLog} />}
 
       {showAddPhase && (
         <AddPhaseModal onClose={() => setShowAddPhase(false)} onSave={handleAddPhase} nextOrder={phases.length + 1} />

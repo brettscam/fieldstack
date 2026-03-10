@@ -190,6 +190,37 @@ export const MOCK_DATA = {
     { id: "st006", Month: "2026-06", Target: 260000, Actual: 0 },
   ],
 
+  // Progress photos per job
+  "Progress Photos": [
+    { id: "ph001", JobId: "job001", Url: null, Thumbnail: "site-prep-complete", Caption: "Site prep finished — all vegetation cleared", UploadedBy: "Rachel Stone", Date: "2026-02-20", Phase: "Site Prep" },
+    { id: "ph002", JobId: "job001", Url: null, Thumbnail: "foundation-forms", Caption: "Foundation forms set, ready for pour", UploadedBy: "Kevin Walsh", Date: "2026-03-03", Phase: "Foundation" },
+    { id: "ph003", JobId: "job001", Url: null, Thumbnail: "foundation-pour", Caption: "10 yards poured, finishing surface", UploadedBy: "Kevin Walsh", Date: "2026-03-05", Phase: "Foundation" },
+    { id: "ph004", JobId: "job001", Url: null, Thumbnail: "rain-delay", Caption: "Heavy rain — site flooded, work paused", UploadedBy: "Rachel Stone", Date: "2026-03-02", Phase: "Foundation" },
+    { id: "ph005", JobId: "job002", Url: null, Thumbnail: "camera-mount-1", Caption: "Cameras 1-4 mounted on east wing", UploadedBy: "Luis Garza", Date: "2026-02-22", Phase: "Wiring" },
+    { id: "ph006", JobId: "job002", Url: null, Thumbnail: "conduit-run", Caption: "Main conduit run complete, pulling wire tomorrow", UploadedBy: "Luis Garza", Date: "2026-02-25", Phase: "Wiring" },
+    { id: "ph007", JobId: "job003", Url: null, Thumbnail: "grading-start", Caption: "Grading underway — section B cleared", UploadedBy: "Sam Ortega", Date: "2026-02-24", Phase: "Grading" },
+    { id: "ph008", JobId: "job004", Url: null, Thumbnail: "panel-rough", Caption: "Panel rough-in started on level 2", UploadedBy: "Tom Bradley", Date: "2026-03-01", Phase: "Electrical Rough-In" },
+    { id: "ph009", JobId: "job005", Url: null, Thumbnail: "rtu-install", Caption: "RTU #1 lifted and set on curb", UploadedBy: "Carlos Vega", Date: "2026-03-06", Phase: "Equipment Install" },
+    { id: "ph010", JobId: "job005", Url: null, Thumbnail: "rtu-2-install", Caption: "RTU #2 connected, testing ductwork", UploadedBy: "Ben Howell", Date: "2026-03-08", Phase: "Equipment Install" },
+  ],
+
+  // Field audit / revision history
+  "Audit Log": [
+    { id: "al001", JobId: "job001", Action: "status_change", Field: "Status", OldValue: "On Hold", NewValue: "On Track", ChangedBy: "Rachel Stone", Date: "2026-02-15T08:30:00", Notes: "Permits approved, work starting" },
+    { id: "al002", JobId: "job001", Action: "phase_update", Field: "Phase: Site Prep → Status", OldValue: "Not Started", NewValue: "In Progress", ChangedBy: "Rachel Stone", Date: "2026-02-15T09:00:00", Notes: null },
+    { id: "al003", JobId: "job001", Action: "phase_complete", Field: "Phase: Site Prep → Status", OldValue: "In Progress", NewValue: "Completed", ChangedBy: "Rachel Stone", Date: "2026-02-28T16:45:00", Notes: "Completed on schedule" },
+    { id: "al004", JobId: "job001", Action: "phase_update", Field: "Phase: Foundation → Status", OldValue: "Not Started", NewValue: "In Progress", ChangedBy: "Kevin Walsh", Date: "2026-02-25T07:15:00", Notes: null },
+    { id: "al005", JobId: "job001", Action: "assignment", Field: "Phase: Framing → AssignedTo", OldValue: null, NewValue: "Jake Torres", ChangedBy: "Rachel Stone", Date: "2026-03-01T10:00:00", Notes: "Assigned framing crew lead" },
+    { id: "al006", JobId: "job001", Action: "flag_added", Field: "Flag", OldValue: null, NewValue: "Weather delay - rain", ChangedBy: "Rachel Stone", Date: "2026-03-02T11:30:00", Notes: "Lost 2 days to heavy rain" },
+    { id: "al007", JobId: "job001", Action: "schedule_change", Field: "Phase: Foundation → EndDate", OldValue: "2026-03-19", NewValue: "2026-03-21", ChangedBy: "Rachel Stone", Date: "2026-03-04T14:00:00", Notes: "Extended due to weather delay" },
+    { id: "al008", JobId: "job002", Action: "phase_complete", Field: "Phase: Survey & Plan → Status", OldValue: "In Progress", NewValue: "Completed", ChangedBy: "Luis Garza", Date: "2026-02-07T17:00:00", Notes: null },
+    { id: "al009", JobId: "job002", Action: "phase_update", Field: "Phase: Wiring → Status", OldValue: "Not Started", NewValue: "In Progress", ChangedBy: "Luis Garza", Date: "2026-02-08T08:00:00", Notes: null },
+    { id: "al010", JobId: "job003", Action: "status_change", Field: "Status", OldValue: "On Track", NewValue: "Delayed", ChangedBy: "Sam Ortega", Date: "2026-02-20T09:30:00", Notes: "Permit delay from city" },
+    { id: "al011", JobId: "job003", Action: "flag_added", Field: "Flag", OldValue: null, NewValue: "Permit delay from city", ChangedBy: "Diana Reyes", Date: "2026-02-20T09:30:00", Notes: "Grading permit took extra week" },
+    { id: "al012", JobId: "job004", Action: "phase_update", Field: "Phase: Electrical Rough-In → Status", OldValue: "Not Started", NewValue: "In Progress", ChangedBy: "Tom Bradley", Date: "2026-02-28T08:00:00", Notes: null },
+    { id: "al013", JobId: "job005", Action: "milestone", Field: "Milestone", OldValue: null, NewValue: "RTU #1 and #2 installed", ChangedBy: "Carlos Vega", Date: "2026-03-08T15:00:00", Notes: "Two of four rooftop units in place" },
+  ],
+
   // Activity log / milestones per job
   Milestones: [
     { id: "ms001", JobId: "job001", Title: "Site cleared and graded", Date: "2026-02-20", Type: "milestone", Notes: "All vegetation removed, grade stakes set" },

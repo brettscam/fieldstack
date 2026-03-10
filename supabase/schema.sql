@@ -57,6 +57,8 @@ create table if not exists jobs (
   contact text,
   start_date date,
   end_date date,
+  lat numeric,
+  lng numeric,
   opportunity_id uuid references opportunities(id),
   created_at timestamptz default now()
 );
