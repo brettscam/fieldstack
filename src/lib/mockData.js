@@ -103,28 +103,28 @@ export const MOCK_DATA = {
 
   "Schedule Phases": [
     // Sunset Ridge Build-Out (job001)
-    { id: "sp001", JobId: "job001", PhaseName: "Site Prep", StartDate: "2026-02-15", EndDate: "2026-02-28", Duration: 10, Order: 1, Status: "Completed" },
-    { id: "sp002", JobId: "job001", PhaseName: "Foundation", StartDate: "2026-02-25", EndDate: "2026-03-21", Duration: 18, Order: 2, Status: "In Progress" },
-    { id: "sp003", JobId: "job001", PhaseName: "Framing", StartDate: "2026-03-17", EndDate: "2026-04-11", Duration: 20, Order: 3, Status: "Not Started" },
-    { id: "sp004", JobId: "job001", PhaseName: "Electrical", StartDate: "2026-03-28", EndDate: "2026-04-14", Duration: 12, Order: 4, Status: "Not Started" },
-    { id: "sp005", JobId: "job001", PhaseName: "Plumbing", StartDate: "2026-04-01", EndDate: "2026-04-14", Duration: 10, Order: 5, Status: "Not Started" },
-    { id: "sp006", JobId: "job001", PhaseName: "Drywall", StartDate: "2026-04-14", EndDate: "2026-05-02", Duration: 14, Order: 6, Status: "Not Started" },
-    { id: "sp007", JobId: "job001", PhaseName: "Finishes", StartDate: "2026-05-01", EndDate: "2026-05-22", Duration: 16, Order: 7, Status: "Not Started" },
-    { id: "sp008", JobId: "job001", PhaseName: "Punch List", StartDate: "2026-05-20", EndDate: "2026-05-30", Duration: 8, Order: 8, Status: "Not Started" },
+    { id: "sp001", JobId: "job001", PhaseName: "Site Prep", StartDate: "2026-02-15", EndDate: "2026-02-28", Duration: 10, Order: 1, Status: "Completed", AssignedTo: "Rachel Stone" },
+    { id: "sp002", JobId: "job001", PhaseName: "Foundation", StartDate: "2026-02-25", EndDate: "2026-03-21", Duration: 18, Order: 2, Status: "In Progress", AssignedTo: "Kevin Walsh" },
+    { id: "sp003", JobId: "job001", PhaseName: "Framing", StartDate: "2026-03-17", EndDate: "2026-04-11", Duration: 20, Order: 3, Status: "Not Started", AssignedTo: "Jake Torres" },
+    { id: "sp004", JobId: "job001", PhaseName: "Electrical", StartDate: "2026-03-28", EndDate: "2026-04-14", Duration: 12, Order: 4, Status: "Not Started", AssignedTo: "Tom Bradley" },
+    { id: "sp005", JobId: "job001", PhaseName: "Plumbing", StartDate: "2026-04-01", EndDate: "2026-04-14", Duration: 10, Order: 5, Status: "Not Started", AssignedTo: "Mike Hernandez" },
+    { id: "sp006", JobId: "job001", PhaseName: "Drywall", StartDate: "2026-04-14", EndDate: "2026-05-02", Duration: 14, Order: 6, Status: "Not Started", AssignedTo: null },
+    { id: "sp007", JobId: "job001", PhaseName: "Finishes", StartDate: "2026-05-01", EndDate: "2026-05-22", Duration: 16, Order: 7, Status: "Not Started", AssignedTo: null },
+    { id: "sp008", JobId: "job001", PhaseName: "Punch List", StartDate: "2026-05-20", EndDate: "2026-05-30", Duration: 8, Order: 8, Status: "Not Started", AssignedTo: "Rachel Stone" },
 
     // Beacon St. Security (job002)
-    { id: "sp009", JobId: "job002", PhaseName: "Survey & Plan", StartDate: "2026-02-01", EndDate: "2026-02-07", Duration: 5, Order: 1, Status: "Completed" },
-    { id: "sp010", JobId: "job002", PhaseName: "Wiring", StartDate: "2026-02-08", EndDate: "2026-03-01", Duration: 15, Order: 2, Status: "In Progress" },
-    { id: "sp011", JobId: "job002", PhaseName: "Equipment Install", StartDate: "2026-03-01", EndDate: "2026-03-10", Duration: 7, Order: 3, Status: "Not Started" },
-    { id: "sp012", JobId: "job002", PhaseName: "Testing & Handoff", StartDate: "2026-03-10", EndDate: "2026-03-20", Duration: 8, Order: 4, Status: "Not Started" },
+    { id: "sp009", JobId: "job002", PhaseName: "Survey & Plan", StartDate: "2026-02-01", EndDate: "2026-02-07", Duration: 5, Order: 1, Status: "Completed", AssignedTo: "Luis Garza" },
+    { id: "sp010", JobId: "job002", PhaseName: "Wiring", StartDate: "2026-02-08", EndDate: "2026-03-01", Duration: 15, Order: 2, Status: "In Progress", AssignedTo: "Luis Garza" },
+    { id: "sp011", JobId: "job002", PhaseName: "Equipment Install", StartDate: "2026-03-01", EndDate: "2026-03-10", Duration: 7, Order: 3, Status: "Not Started", AssignedTo: "Nina Patel" },
+    { id: "sp012", JobId: "job002", PhaseName: "Testing & Handoff", StartDate: "2026-03-10", EndDate: "2026-03-20", Duration: 8, Order: 4, Status: "Not Started", AssignedTo: "Nina Patel" },
 
     // River Walk Phase 2 (job003)
-    { id: "sp013", JobId: "job003", PhaseName: "Mobilization", StartDate: "2026-02-10", EndDate: "2026-02-17", Duration: 5, Order: 1, Status: "Completed" },
-    { id: "sp014", JobId: "job003", PhaseName: "Grading", StartDate: "2026-02-17", EndDate: "2026-03-14", Duration: 18, Order: 2, Status: "In Progress" },
-    { id: "sp015", JobId: "job003", PhaseName: "Hardscape", StartDate: "2026-03-10", EndDate: "2026-03-31", Duration: 15, Order: 3, Status: "Not Started" },
-    { id: "sp016", JobId: "job003", PhaseName: "Planting", StartDate: "2026-03-28", EndDate: "2026-04-18", Duration: 15, Order: 4, Status: "Not Started" },
-    { id: "sp017", JobId: "job003", PhaseName: "Irrigation", StartDate: "2026-04-05", EndDate: "2026-04-20", Duration: 10, Order: 5, Status: "Not Started" },
-    { id: "sp018", JobId: "job003", PhaseName: "Walkthrough", StartDate: "2026-04-20", EndDate: "2026-04-30", Duration: 8, Order: 6, Status: "Not Started" },
+    { id: "sp013", JobId: "job003", PhaseName: "Mobilization", StartDate: "2026-02-10", EndDate: "2026-02-17", Duration: 5, Order: 1, Status: "Completed", AssignedTo: "Sam Ortega" },
+    { id: "sp014", JobId: "job003", PhaseName: "Grading", StartDate: "2026-02-17", EndDate: "2026-03-14", Duration: 18, Order: 2, Status: "In Progress", AssignedTo: "Sam Ortega" },
+    { id: "sp015", JobId: "job003", PhaseName: "Hardscape", StartDate: "2026-03-10", EndDate: "2026-03-31", Duration: 15, Order: 3, Status: "Not Started", AssignedTo: null },
+    { id: "sp016", JobId: "job003", PhaseName: "Planting", StartDate: "2026-03-28", EndDate: "2026-04-18", Duration: 15, Order: 4, Status: "Not Started", AssignedTo: null },
+    { id: "sp017", JobId: "job003", PhaseName: "Irrigation", StartDate: "2026-04-05", EndDate: "2026-04-20", Duration: 10, Order: 5, Status: "Not Started", AssignedTo: null },
+    { id: "sp018", JobId: "job003", PhaseName: "Walkthrough", StartDate: "2026-04-20", EndDate: "2026-04-30", Duration: 8, Order: 6, Status: "Not Started", AssignedTo: "Diana Reyes" },
   ],
 
   // Team members per job
@@ -178,6 +178,16 @@ export const MOCK_DATA = {
       { description: "Drywall & Finishes", cost: 26000, type: "In-House", vendor: "" },
       { description: "Project Management", cost: 14000, type: "In-House", vendor: "" },
     ], Total: 142000, Status: "Approved", CreatedDate: "2026-01-20" },
+  ],
+
+  // Sales targets — monthly targets for planned vs actual
+  "Sales Targets": [
+    { id: "st001", Month: "2026-01", Target: 180000, Actual: 198000 },
+    { id: "st002", Month: "2026-02", Target: 200000, Actual: 156000 },
+    { id: "st003", Month: "2026-03", Target: 220000, Actual: 96000 },
+    { id: "st004", Month: "2026-04", Target: 200000, Actual: 0 },
+    { id: "st005", Month: "2026-05", Target: 240000, Actual: 0 },
+    { id: "st006", Month: "2026-06", Target: 260000, Actual: 0 },
   ],
 
   // Activity log / milestones per job

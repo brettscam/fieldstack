@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { BRAND, FONT, getStageStyle, formatCurrency, formatFullCurrency } from "../lib/design";
 import Icons from "../components/Icons";
-import { useJobs, useOpportunities, useSchedulePhases } from "../lib/hooks";
+import { useJobs, useOpportunities, useSchedulePhases, useSalesTargets } from "../lib/hooks";
 
 // Side detail panel — slides in from right
 function DetailPanel({ title, onClose, children }) {
@@ -395,11 +395,229 @@ function TodayJobs({ jobs, onJobClick }) {
   );
 }
 
+// Sales Funnel — shows conversion from Lead → Won
+function SalesFunnel({ opportunities, onStageClick }) {
+  const stages = ["Lead", "Qualified", "Proposal Sent", "Negotiation", "Won"];
+  const funnelData = useMemo(() => {
+    return stages.map(stage => {
+      const items = opportunities.filter(o => o.Stage === stage);
+      const value = items.reduce((s, o) => s + (o.Value || 0), 0);
+      return { stage, count: items.length, value, items };
+    });
+  }, [opportunities]);
+
+  const maxCount = Math.max(1, ...funnelData.map(d => d.count));
+  const maxWidth = 100;
+
+  return (
+    <div className="fs-hover-lift" style={{
+      background: BRAND.white, borderRadius: 14, border: `1px solid ${BRAND.border}`,
+      padding: "20px 22px", flex: 1, minWidth: 300,
+      animation: "fs-fadeUp 0.5s ease 0.3s both",
+    }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT, marginBottom: 4 }}>
+        Sales Funnel
+      </div>
+      <div style={{ fontSize: 12, color: BRAND.textTertiary, fontFamily: FONT, fontWeight: 500, marginBottom: 20 }}>
+        Pipeline conversion by stage
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        {funnelData.map((d, i) => {
+          const stageStyle = getStageStyle(d.stage);
+          const widthPct = Math.max(20, (d.count / maxCount) * maxWidth);
+          const conversionRate = i > 0 && funnelData[i - 1].count > 0
+            ? Math.round((d.count / funnelData[i - 1].count) * 100) : null;
+          return (
+            <div key={d.stage} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              {i > 0 && conversionRate != null && (
+                <div style={{
+                  fontSize: 10, fontWeight: 700, color: conversionRate >= 50 ? BRAND.green : BRAND.amber,
+                  fontFamily: FONT, marginBottom: 2,
+                }}>
+                  {conversionRate}% conversion
+                </div>
+              )}
+              <div
+                onClick={() => onStageClick && onStageClick(d.stage, d.items)}
+                style={{
+                  width: `${widthPct}%`,
+                  padding: "10px 16px",
+                  background: stageStyle.color + "14",
+                  borderRadius: 8,
+                  border: `1.5px solid ${stageStyle.color}33`,
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                className="fs-hover-lift"
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: stageStyle.color }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>{d.stage}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>{d.count}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT }}>{formatCurrency(d.value)}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Conversion summary */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", marginTop: 16,
+        padding: "10px 14px", background: BRAND.surface, borderRadius: 10,
+        border: `1px solid ${BRAND.border}`,
+      }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.textTertiary, textTransform: "uppercase", letterSpacing: 0.5 }}>Overall Conversion</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: BRAND.green, fontFamily: FONT }}>
+            {funnelData[0].count > 0 ? Math.round((funnelData[funnelData.length - 1].count / funnelData[0].count) * 100) : 0}%
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.textTertiary, textTransform: "uppercase", letterSpacing: 0.5 }}>Won Value</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: BRAND.green, fontFamily: FONT }}>
+            {formatCurrency(funnelData[funnelData.length - 1].value)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.textTertiary, textTransform: "uppercase", letterSpacing: 0.5 }}>Avg Deal Size</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>
+            {opportunities.length > 0 ? formatCurrency(opportunities.reduce((s, o) => s + (o.Value || 0), 0) / opportunities.length) : "$0"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Planned vs Actual — bar chart comparing monthly targets to actual revenue
+function PlannedVsActual({ salesTargets, opportunities }) {
+  const chartData = useMemo(() => {
+    return salesTargets.map(t => {
+      const monthDate = new Date(t.Month + "-01");
+      const monthLabel = monthDate.toLocaleDateString("en-US", { month: "short" });
+      const isFuture = monthDate > new Date();
+      // For current month, sum won opps that closed in this month
+      const monthWon = opportunities
+        .filter(o => o.Stage === "Won" && o.ExpectedClose && o.ExpectedClose.startsWith(t.Month))
+        .reduce((s, o) => s + (o.Value || 0), 0);
+      const actual = t.Actual || monthWon;
+      const pct = t.Target > 0 ? Math.round((actual / t.Target) * 100) : 0;
+      return { ...t, monthLabel, actual, pct, isFuture };
+    });
+  }, [salesTargets, opportunities]);
+
+  const maxVal = Math.max(1, ...chartData.flatMap(d => [d.Target, d.actual]));
+  const barMaxH = 140;
+
+  // YTD totals
+  const ytdTarget = chartData.reduce((s, d) => s + (d.Target || 0), 0);
+  const ytdActual = chartData.filter(d => !d.isFuture).reduce((s, d) => s + (d.actual || 0), 0);
+  const ytdPct = ytdTarget > 0 ? Math.round((ytdActual / ytdTarget) * 100) : 0;
+
+  return (
+    <div className="fs-hover-lift" style={{
+      background: BRAND.white, borderRadius: 14, border: `1px solid ${BRAND.border}`,
+      padding: "20px 22px", flex: 1, minWidth: 300,
+      animation: "fs-fadeUp 0.5s ease 0.35s both",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>
+            Planned vs Actual
+          </div>
+          <div style={{ fontSize: 12, color: BRAND.textTertiary, fontFamily: FONT, fontWeight: 500, marginTop: 2 }}>
+            Monthly revenue against targets
+          </div>
+        </div>
+        <div style={{
+          fontSize: 11, fontWeight: 700, fontFamily: FONT,
+          color: ytdPct >= 90 ? BRAND.green : ytdPct >= 70 ? BRAND.amber : BRAND.red,
+          background: (ytdPct >= 90 ? BRAND.green : ytdPct >= 70 ? BRAND.amber : BRAND.red) + "18",
+          padding: "3px 10px", borderRadius: 6,
+        }}>YTD {ytdPct}%</div>
+      </div>
+
+      {/* Bar chart */}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, marginTop: 16, height: barMaxH, paddingBottom: 24, position: "relative" }}>
+        {/* Baseline */}
+        <div style={{ position: "absolute", bottom: 24, left: 0, right: 0, borderTop: `1px dashed ${BRAND.border}` }} />
+
+        {chartData.map((d, i) => {
+          const targetH = (d.Target / maxVal) * (barMaxH - 24);
+          const actualH = (d.actual / maxVal) * (barMaxH - 24);
+          return (
+            <div key={d.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+              <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: barMaxH - 24 }}>
+                {/* Target bar */}
+                <div style={{
+                  width: 16, height: targetH, borderRadius: "4px 4px 0 0",
+                  background: BRAND.border,
+                  animation: `fs-barGrow 0.6s ease ${0.1 + i * 0.06}s both`,
+                }} title={`Target: ${formatFullCurrency(d.Target)}`} />
+                {/* Actual bar */}
+                <div style={{
+                  width: 16, height: actualH, borderRadius: "4px 4px 0 0",
+                  background: d.pct >= 100 ? BRAND.green : d.pct >= 80 ? BRAND.blue : d.pct >= 50 ? BRAND.amber : d.isFuture ? BRAND.border + "66" : BRAND.red,
+                  animation: `fs-barGrow 0.6s ease ${0.15 + i * 0.06}s both`,
+                }} title={`Actual: ${formatFullCurrency(d.actual)}`} />
+              </div>
+              <div style={{ marginTop: 6, textAlign: "center" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>{d.monthLabel}</div>
+                {!d.isFuture && d.actual > 0 && (
+                  <div style={{
+                    fontSize: 9, fontWeight: 700, fontFamily: FONT, marginTop: 1,
+                    color: d.pct >= 100 ? BRAND.green : d.pct >= 80 ? BRAND.blue : BRAND.red,
+                  }}>{d.pct}%</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend + YTD summary */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        marginTop: 12, padding: "10px 14px", background: BRAND.surface,
+        borderRadius: 10, border: `1px solid ${BRAND.border}`,
+      }}>
+        <div style={{ display: "flex", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: BRAND.border }} />
+            <span style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>Target</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: BRAND.blue }} />
+            <span style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>Actual</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 16 }}>
+          <div>
+            <span style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>YTD Target: </span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>{formatCurrency(ytdTarget)}</span>
+          </div>
+          <div>
+            <span style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>YTD Actual: </span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: ytdPct >= 90 ? BRAND.green : BRAND.red, fontFamily: FONT }}>{formatCurrency(ytdActual)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { records: jobs } = useJobs();
   const { records: opportunities } = useOpportunities();
   const { records: schedulePhases } = useSchedulePhases();
+  const { records: salesTargets } = useSalesTargets();
   const [panel, setPanel] = useState(null); // { type, data }
 
   const metrics = useMemo(() => {
@@ -457,6 +675,12 @@ export default function Dashboard() {
       {/* Pipeline + Heatmap row */}
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
         <PipelineSummary opportunities={opportunities} onOppClick={(opp) => openPanel("opp", opp)} />
+      </div>
+
+      {/* Funnel + Planned vs Actual row */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+        <SalesFunnel opportunities={opportunities} onStageClick={(stage, items) => openPanel("openOpps", items)} />
+        <PlannedVsActual salesTargets={salesTargets} opportunities={opportunities} />
       </div>
 
       {/* Heatmap + Today's Jobs row */}

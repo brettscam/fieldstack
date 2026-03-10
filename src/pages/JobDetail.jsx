@@ -94,11 +94,7 @@ function getTimeColumns(viewMin, viewMax, horizonKey) {
 function PhasePopover({ phase, color, teamMembers, onClose, onUpdatePhase, style: posStyle }) {
   const statusColors = { "Completed": BRAND.green, "In Progress": BRAND.blue, "Not Started": BRAND.textTertiary };
   const stColor = statusColors[phase.Status] || BRAND.textTertiary;
-  // Find potential owner from team
-  const possibleOwner = teamMembers?.find(m =>
-    phase.PhaseName.toLowerCase().includes(m.Role.split(" ")[0].toLowerCase()) ||
-    m.Role.toLowerCase().includes(phase.PhaseName.split(" ")[0].toLowerCase())
-  ) || teamMembers?.[0];
+  const [showAssignMenu, setShowAssignMenu] = useState(false);
 
   return (
     <div style={{
@@ -141,24 +137,62 @@ function PhasePopover({ phase, color, teamMembers, onClose, onUpdatePhase, style
           </div>
         </div>
 
-        {/* Owner */}
-        {possibleOwner && (
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT, marginBottom: 4 }}>Owner</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: "50%",
-                background: BRAND.blue + "22", border: `1.5px solid ${BRAND.blue}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 9, fontWeight: 700, color: BRAND.blue, fontFamily: FONT,
-              }}>{possibleOwner.Name.split(" ").map(n => n[0]).join("")}</div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{possibleOwner.Name}</div>
-                <div style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{possibleOwner.Role}</div>
-              </div>
-            </div>
+        {/* Assigned To */}
+        <div style={{ marginBottom: 12, position: "relative" }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT, marginBottom: 4 }}>Assigned To</div>
+          <div onClick={(e) => { e.stopPropagation(); setShowAssignMenu(!showAssignMenu); }} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
+            background: BRAND.surface, borderRadius: 8, cursor: "pointer",
+            border: `1px solid ${BRAND.border}`,
+          }}>
+            {phase.AssignedTo ? (
+              <>
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.purple})`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 8, fontWeight: 700, color: BRAND.white, flexShrink: 0,
+                }}>{phase.AssignedTo.split(" ").map(n => n[0]).join("")}</div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT, flex: 1 }}>{phase.AssignedTo}</span>
+                <div onClick={(e) => { e.stopPropagation(); onUpdatePhase(phase.id, { AssignedTo: null }); }} style={{ cursor: "pointer" }}>
+                  <Icons.X size={12} color={BRAND.textTertiary} />
+                </div>
+              </>
+            ) : (
+              <>
+                <Icons.Plus size={14} color={BRAND.textTertiary} />
+                <span style={{ fontSize: 11, fontWeight: 500, color: BRAND.textTertiary, fontFamily: FONT }}>Assign someone</span>
+              </>
+            )}
           </div>
-        )}
+          {showAssignMenu && teamMembers && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, zIndex: 200,
+              background: BRAND.white, borderRadius: 10, border: `1px solid ${BRAND.border}`,
+              boxShadow: `0 4px 16px ${BRAND.shadowMd}`, maxHeight: 180, overflowY: "auto",
+            }}>
+              {teamMembers.map(m => (
+                <div key={m.id} onClick={(e) => { e.stopPropagation(); onUpdatePhase(phase.id, { AssignedTo: m.Name }); setShowAssignMenu(false); }}
+                  className="fs-nav-item" style={{
+                    display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", cursor: "pointer",
+                    background: phase.AssignedTo === m.Name ? BRAND.blueSoft : "transparent",
+                  }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.purple})`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 9, fontWeight: 700, color: BRAND.white,
+                  }}>{m.Name.split(" ").map(n => n[0]).join("")}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{m.Name}</div>
+                    <div style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{m.Role}</div>
+                  </div>
+                  {phase.AssignedTo === m.Name && <Icons.Check size={14} color={BRAND.blue} />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Quick status change */}
         <div style={{ marginBottom: 8 }}>

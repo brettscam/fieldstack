@@ -227,6 +227,22 @@ export function useEstimates(oppId) {
   return { records };
 }
 
+export function useSalesTargets() {
+  const [records, setRecords] = useState([]);
+  useEffect(() => {
+    setRecords(MOCK_DATA["Sales Targets"] || []);
+  }, []);
+  return { records };
+}
+
+export function useAllTeamMembers() {
+  const [records, setRecords] = useState([]);
+  useEffect(() => {
+    setRecords(MOCK_DATA["Team Members"] || []);
+  }, []);
+  return { records };
+}
+
 export function useMilestones(jobId) {
   const [records, setRecords] = useState([]);
   useEffect(() => {

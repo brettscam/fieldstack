@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BRAND, FONT, formatDate } from "../lib/design";
 import Icons from "../components/Icons";
-import { useJobs, useSchedulePhases, useMilestones } from "../lib/hooks";
+import { useJobs, useSchedulePhases, useMilestones, useAllTeamMembers } from "../lib/hooks";
 
 const JOB_COLORS = [BRAND.blue, BRAND.purple, BRAND.green, BRAND.amber, BRAND.red];
 
@@ -48,14 +48,19 @@ function getTimeColumns(viewMin, viewMax) {
 }
 
 // Phase detail popover for schedule view
-function PhasePopover({ phase, color, job, onClose, onUpdatePhase, style: posStyle }) {
+function PhasePopover({ phase, color, job, onClose, onUpdatePhase, teamMembers, style: posStyle }) {
   const statusColors = { "Completed": BRAND.green, "In Progress": BRAND.blue, "Not Started": BRAND.textTertiary };
   const stColor = statusColors[phase.Status] || BRAND.textTertiary;
+  const [showAssignMenu, setShowAssignMenu] = useState(false);
+
+  // Team members for this job
+  const jobMembers = teamMembers?.filter(m => m.JobId === phase.JobId) || [];
+
   return (
     <div data-popover style={{
       position: "absolute", zIndex: 100, background: BRAND.white, borderRadius: 12,
       boxShadow: `0 8px 30px rgba(0,0,0,0.15)`, border: `1px solid ${BRAND.border}`,
-      width: 300, animation: "fs-scaleIn 0.15s ease both", ...posStyle,
+      width: 320, animation: "fs-scaleIn 0.15s ease both", ...posStyle,
     }}>
       <div style={{ padding: "14px 16px", borderBottom: `1px solid ${BRAND.border}`, borderTop: `3px solid ${color}`, borderRadius: "12px 12px 0 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -81,6 +86,66 @@ function PhasePopover({ phase, color, job, onClose, onUpdatePhase, style: posSty
             <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{formatDate(phase.EndDate)}</div>
           </div>
         </div>
+
+        {/* Assigned To */}
+        <div style={{ marginBottom: 12, position: "relative" }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT, marginBottom: 4 }}>Assigned To</div>
+          <div onClick={(e) => { e.stopPropagation(); setShowAssignMenu(!showAssignMenu); }} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "6px 10px",
+            background: BRAND.surface, borderRadius: 8, cursor: "pointer",
+            border: `1px solid ${BRAND.border}`,
+          }}>
+            {phase.AssignedTo ? (
+              <>
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.purple})`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 8, fontWeight: 700, color: BRAND.white, flexShrink: 0,
+                }}>{phase.AssignedTo.split(" ").map(n => n[0]).join("")}</div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT, flex: 1 }}>{phase.AssignedTo}</span>
+                <div onClick={(e) => { e.stopPropagation(); onUpdatePhase(phase.id, { AssignedTo: null }); }} style={{ cursor: "pointer" }}>
+                  <Icons.X size={12} color={BRAND.textTertiary} />
+                </div>
+              </>
+            ) : (
+              <>
+                <Icons.Plus size={14} color={BRAND.textTertiary} />
+                <span style={{ fontSize: 11, fontWeight: 500, color: BRAND.textTertiary, fontFamily: FONT }}>Assign someone</span>
+              </>
+            )}
+          </div>
+          {showAssignMenu && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, zIndex: 200,
+              background: BRAND.white, borderRadius: 10, border: `1px solid ${BRAND.border}`,
+              boxShadow: `0 4px 16px ${BRAND.shadowMd}`, maxHeight: 180, overflowY: "auto",
+            }}>
+              {jobMembers.length > 0 ? jobMembers.map(m => (
+                <div key={m.id} onClick={(e) => { e.stopPropagation(); onUpdatePhase(phase.id, { AssignedTo: m.Name }); setShowAssignMenu(false); }}
+                  className="fs-nav-item" style={{
+                    display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", cursor: "pointer",
+                    background: phase.AssignedTo === m.Name ? BRAND.blueSoft : "transparent",
+                  }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${BRAND.blue}, ${BRAND.purple})`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 9, fontWeight: 700, color: BRAND.white,
+                  }}>{m.Name.split(" ").map(n => n[0]).join("")}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{m.Name}</div>
+                    <div style={{ fontSize: 10, color: BRAND.textTertiary, fontFamily: FONT }}>{m.Role}</div>
+                  </div>
+                  {phase.AssignedTo === m.Name && <Icons.Check size={14} color={BRAND.blue} />}
+                </div>
+              )) : (
+                <div style={{ padding: 12, textAlign: "center", color: BRAND.textTertiary, fontSize: 11 }}>No team members on this job</div>
+              )}
+            </div>
+          )}
+        </div>
+
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT, marginBottom: 4 }}>Change Status</div>
           <div style={{ display: "flex", gap: 4 }}>
@@ -119,6 +184,7 @@ export default function Schedule() {
   const { records: jobs } = useJobs();
   const { records: allPhases, setRecords: setAllPhases } = useSchedulePhases();
   const { records: allMilestones } = useMilestones();
+  const { records: allTeamMembers } = useAllTeamMembers();
   const navigate = useNavigate();
   const [selectedJob, setSelectedJob] = useState("all");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -556,11 +622,20 @@ export default function Schedule() {
                         }}>
                           {isComplete && <Icons.Check size={8} color={BRAND.white} />}
                         </div>
-                        <div style={{ flex: 1, overflow: "hidden" }}>
+                        <div style={{ flex: 1, overflow: "hidden", display: "flex", alignItems: "center", gap: 4 }}>
                           <div style={{
                             fontSize: 11, fontWeight: 600, color: BRAND.textPrimary,
-                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
                           }}>{phase.PhaseName}</div>
+                          {phase.AssignedTo && (
+                            <div title={phase.AssignedTo} style={{
+                              width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                              background: `linear-gradient(135deg, ${jobColor}, ${jobColor}88)`,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 7, fontWeight: 700, color: BRAND.white,
+                              border: `1.5px solid ${BRAND.white}`,
+                            }}>{phase.AssignedTo.split(" ").map(n => n[0]).join("")}</div>
+                          )}
                         </div>
                       </div>
                       <div style={{ flex: 1, position: "relative", height: "100%" }}>
@@ -606,6 +681,7 @@ export default function Schedule() {
                 phase={phase}
                 color={JOB_COLORS[gi >= 0 ? gi % JOB_COLORS.length : 0]}
                 job={job}
+                teamMembers={allTeamMembers}
                 onClose={() => setPopover(null)}
                 onUpdatePhase={handleUpdatePhase}
                 style={{ left: Math.max(0, popover.x), top: popover.y }}
