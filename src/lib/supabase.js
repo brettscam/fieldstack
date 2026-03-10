@@ -3,14 +3,19 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
-// Only create a real client if credentials are provided;
-// otherwise use a dummy placeholder to avoid crashing at import time.
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : createClient("https://placeholder.supabase.co", "placeholder");
+let supabaseClient = null;
+try {
+  if (supabaseUrl && supabaseAnonKey) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  }
+} catch (e) {
+  console.warn("Supabase init failed, using mock data:", e.message);
+}
+
+export const supabase = supabaseClient;
 
 export function isConfigured() {
-  return Boolean(supabaseUrl && supabaseAnonKey);
+  return supabaseClient !== null;
 }
 
 // Table name constants (matching SQL schema)
