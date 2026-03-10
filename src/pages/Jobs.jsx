@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { BRAND, FONT, formatFullCurrency } from "../lib/design";
 import Icons from "../components/Icons";
-import { useJobs, useMutation } from "../lib/hooks";
+import { useJobs, useCompanies, useMutation } from "../lib/hooks";
 import { TABLES } from "../lib/supabase";
 
 function StatusBadge({ status }) {
@@ -23,7 +23,45 @@ function StatusBadge({ status }) {
   );
 }
 
-function NewJobModal({ onClose, onSave }) {
+// Fuzzy match company autocomplete for jobs
+function JobCompanyAutocomplete({ value, onChange, companies, inputStyle }) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestions = useMemo(() => {
+    if (!value || value.length < 2) return [];
+    const q = value.toLowerCase();
+    return companies.filter(c => c.Name.toLowerCase().includes(q)).slice(0, 5);
+  }, [value, companies]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input style={inputStyle} value={value}
+        onChange={e => onChange(e.target.value)}
+        onFocus={() => setShowSuggestions(true)}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+        placeholder="Start typing..."
+      />
+      {showSuggestions && suggestions.length > 0 && (
+        <div style={{
+          position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+          background: BRAND.white, borderRadius: 8, border: `1px solid ${BRAND.border}`,
+          boxShadow: `0 4px 12px ${BRAND.shadowMd}`, marginTop: 2, maxHeight: 160, overflowY: "auto",
+        }}>
+          {suggestions.map(c => (
+            <div key={c.id} onMouseDown={() => { onChange(c.Name); setShowSuggestions(false); }} style={{
+              padding: "8px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+              color: BRAND.textPrimary, fontFamily: FONT, borderBottom: `1px solid ${BRAND.border}`,
+            }} className="fs-nav-item">
+              <div>{c.Name}</div>
+              <div style={{ fontSize: 10, color: BRAND.textTertiary, fontWeight: 500 }}>{c.Industry}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NewJobModal({ onClose, onSave, companies }) {
   const [form, setForm] = useState({
     Name: "", Site: "", Company: "", Contact: "", Crew: "",
     Value: "", StartDate: "", EndDate: "", Phase: "Pre-Construction",
@@ -53,7 +91,7 @@ function NewJobModal({ onClose, onSave }) {
           <div style={{ display: "flex", gap: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 4 }}>Company</label>
-              <input style={inputStyle} value={form.Company} onChange={e => set("Company", e.target.value)} />
+              <JobCompanyAutocomplete value={form.Company} onChange={v => set("Company", v)} companies={companies} inputStyle={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 4 }}>Crew</label>
@@ -179,6 +217,7 @@ function MapView({ jobs }) {
 
 export default function Jobs() {
   const { records: jobs, refresh } = useJobs();
+  const { records: companies } = useCompanies();
   const { create } = useMutation(TABLES.JOBS);
   const navigate = useNavigate();
   const [showNew, setShowNew] = useState(false);
@@ -318,7 +357,7 @@ export default function Jobs() {
             <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.blue }}>{job.JobId}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: BRAND.textPrimary }}>{job.Name}</div>
-              <div style={{ fontSize: 11, color: BRAND.textTertiary, fontWeight: 500, marginTop: 1 }}>{job.Company}</div>
+              <div onClick={(e) => { e.stopPropagation(); navigate(`/companies?highlight=${encodeURIComponent(job.Company)}`); }} style={{ fontSize: 11, color: BRAND.blue, fontWeight: 500, marginTop: 1, cursor: "pointer" }}>{job.Company}</div>
             </div>
             <div style={{ fontSize: 12, color: BRAND.textSecondary, fontWeight: 500 }}>{job.Site}</div>
             <div style={{ fontSize: 12, color: BRAND.textSecondary, fontWeight: 500 }}>{job.Crew}</div>
@@ -342,7 +381,7 @@ export default function Jobs() {
         )}
       </div>
 
-      {showNew && <NewJobModal onClose={() => setShowNew(false)} onSave={handleCreate} />}
+      {showNew && <NewJobModal onClose={() => setShowNew(false)} onSave={handleCreate} companies={companies} />}
     </div>
   );
 }

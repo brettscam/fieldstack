@@ -5,13 +5,13 @@ import Icons from "../components/Icons";
 import { useRecord, useSchedulePhases, useTeamMembers, useMilestones } from "../lib/hooks";
 import { TABLES } from "../lib/supabase";
 
-function InfoRow({ label, value, icon: Icon }) {
+function InfoRow({ label, value, icon: Icon, onClick }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0" }}>
-      {Icon && <Icon size={16} color={BRAND.textTertiary} />}
+    <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: onClick ? "pointer" : "default" }}>
+      {Icon && <Icon size={16} color={onClick ? BRAND.blue : BRAND.textTertiary} />}
       <div>
         <div style={{ fontSize: 11, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT }}>{label}</div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT, marginTop: 1 }}>{value || "—"}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: onClick ? BRAND.blue : BRAND.textPrimary, fontFamily: FONT, marginTop: 1 }}>{value || "—"}</div>
       </div>
     </div>
   );
@@ -807,8 +807,9 @@ export default function JobDetail() {
               }}>{flagCount} flag{flagCount > 1 ? "s" : ""}</span>
             )}
           </div>
-          <div style={{ fontSize: 13, color: BRAND.textTertiary, fontWeight: 500, marginTop: 4 }}>
-            {job.JobId} · {job.Company}
+          <div style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>
+            <span style={{ color: BRAND.textTertiary }}>{job.JobId} · </span>
+            <span onClick={() => navigate(`/companies?highlight=${encodeURIComponent(job.Company)}`)} style={{ color: BRAND.blue, cursor: "pointer" }}>{job.Company}</span>
           </div>
         </div>
         <button style={{
@@ -828,7 +829,7 @@ export default function JobDetail() {
           <InfoRow label="Site" value={job.Site} icon={Icons.MapPin} />
           <InfoRow label="Crew" value={job.Crew} icon={Icons.Users} />
           <InfoRow label="Value" value={formatFullCurrency(job.Value)} icon={Icons.DollarSign} />
-          <InfoRow label="Contact" value={job.Contact} icon={Icons.Contacts} />
+          <InfoRow label="Contact" value={job.Contact} icon={Icons.Contacts} onClick={() => navigate(`/contacts?search=${encodeURIComponent(job.Contact)}`)} />
           <InfoRow label="Start" value={formatDate(job.StartDate)} icon={Icons.Calendar} />
           <InfoRow label="End" value={formatDate(job.EndDate)} icon={Icons.Calendar} />
         </div>

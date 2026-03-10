@@ -1,10 +1,87 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BRAND, FONT } from "../lib/design";
 import Icons from "../components/Icons";
-import { useContacts, useMutation } from "../lib/hooks";
+import { useContacts, useCompanies, useMutation } from "../lib/hooks";
 import { TABLES } from "../lib/supabase";
 
-function ContactModal({ contact, onClose, onSave }) {
+// Fuzzy match company autocomplete for contacts
+function ContactCompanyAutocomplete({ value, onChange, companies, inputStyle }) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [warning, setWarning] = useState(null);
+
+  function levenshtein(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        matrix[i][j] = b[i - 1] === a[j - 1]
+          ? matrix[i - 1][j - 1]
+          : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  const suggestions = useMemo(() => {
+    if (!value || value.length < 2) return [];
+    const q = value.toLowerCase();
+    return companies.filter(c => c.Name.toLowerCase().includes(q) || levenshtein(c.Name.toLowerCase(), q) <= 2)
+      .sort((a, b) => {
+        const aExact = a.Name.toLowerCase().startsWith(q) ? 0 : 1;
+        const bExact = b.Name.toLowerCase().startsWith(q) ? 0 : 1;
+        return aExact - bExact;
+      }).slice(0, 5);
+  }, [value, companies]);
+
+  const handleBlur = () => {
+    setTimeout(() => setShowSuggestions(false), 200);
+    if (value && !companies.some(c => c.Name === value)) {
+      const close = companies.find(c => levenshtein(c.Name.toLowerCase(), value.toLowerCase()) <= 2);
+      if (close) setWarning(`Did you mean "${close.Name}"?`);
+      else setWarning(null);
+    } else setWarning(null);
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input style={inputStyle} value={value}
+        onChange={e => { onChange(e.target.value); setWarning(null); }}
+        onFocus={() => setShowSuggestions(true)} onBlur={handleBlur}
+        placeholder="Start typing..."
+      />
+      {showSuggestions && suggestions.length > 0 && (
+        <div style={{
+          position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+          background: BRAND.white, borderRadius: 8, border: `1px solid ${BRAND.border}`,
+          boxShadow: `0 4px 12px ${BRAND.shadowMd}`, marginTop: 2, maxHeight: 160, overflowY: "auto",
+        }}>
+          {suggestions.map(c => (
+            <div key={c.id} onMouseDown={() => { onChange(c.Name); setShowSuggestions(false); setWarning(null); }} style={{
+              padding: "8px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+              color: BRAND.textPrimary, fontFamily: FONT, borderBottom: `1px solid ${BRAND.border}`,
+            }} className="fs-nav-item">
+              <div>{c.Name}</div>
+              <div style={{ fontSize: 10, color: BRAND.textTertiary, fontWeight: 500 }}>{c.Industry}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {warning && (
+        <div style={{ fontSize: 10, fontWeight: 600, color: BRAND.amber, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+          <span>⚠</span> {warning}
+          <span onMouseDown={() => { const match = companies.find(c => levenshtein(c.Name.toLowerCase(), value.toLowerCase()) <= 2); if (match) { onChange(match.Name); setWarning(null); } }}
+            style={{ color: BRAND.blue, cursor: "pointer", textDecoration: "underline" }}>Use it</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContactModal({ contact, onClose, onSave, companies }) {
   const isEdit = Boolean(contact?.id);
   const [form, setForm] = useState({
     Name: contact?.Name || "",
@@ -56,7 +133,7 @@ function ContactModal({ contact, onClose, onSave }) {
           <div style={{ display: "flex", gap: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 4 }}>Company</label>
-              <input style={inputStyle} value={form.Company} onChange={e => set("Company", e.target.value)} />
+              <ContactCompanyAutocomplete value={form.Company} onChange={v => set("Company", v)} companies={companies} inputStyle={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: BRAND.textSecondary, display: "block", marginBottom: 4 }}>Role</label>
@@ -87,11 +164,20 @@ function ContactModal({ contact, onClose, onSave }) {
 }
 
 export default function Contacts() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { records: contacts, refresh } = useContacts();
+  const { records: companies } = useCompanies();
   const { create, update, remove } = useMutation(TABLES.CONTACTS);
   const [showModal, setShowModal] = useState(false);
   const [editContact, setEditContact] = useState(null);
   const [search, setSearch] = useState("");
+
+  // Auto-fill search from URL param
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) setSearch(q);
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     if (!search) return contacts;
@@ -180,8 +266,8 @@ export default function Contacts() {
             display: "flex", alignItems: "center", gap: 8,
             marginBottom: 10, padding: "0 4px",
           }}>
-            <Icons.Building size={14} color={BRAND.textTertiary} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: BRAND.textSecondary }}>{company}</span>
+            <Icons.Building size={14} color={BRAND.blue} />
+            <span onClick={() => navigate(`/companies?highlight=${encodeURIComponent(company)}`)} style={{ fontSize: 13, fontWeight: 700, color: BRAND.blue, cursor: "pointer" }}>{company}</span>
             <span style={{
               fontSize: 11, fontWeight: 600, color: BRAND.textTertiary,
               background: BRAND.surface, borderRadius: 6, padding: "1px 7px",
@@ -242,6 +328,7 @@ export default function Contacts() {
           contact={editContact}
           onClose={() => { setShowModal(false); setEditContact(null); }}
           onSave={handleSave}
+          companies={companies}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BRAND, FONT, formatFullCurrency, formatCurrency, getStageStyle } from "../lib/design";
 import Icons from "../components/Icons";
 import { useCompanies, useOpportunities, useJobs } from "../lib/hooks";
@@ -7,8 +8,19 @@ export default function Companies() {
   const { records: companies } = useCompanies();
   const { records: opportunities } = useOpportunities();
   const { records: jobs } = useJobs();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [expandedCompany, setExpandedCompany] = useState(null);
+
+  // Auto-expand from URL highlight param
+  useEffect(() => {
+    const highlight = searchParams.get("highlight");
+    if (highlight) {
+      const comp = companies.find(c => c.Name === highlight);
+      if (comp) setExpandedCompany(comp.id);
+    }
+  }, [searchParams, companies]);
 
   const enriched = useMemo(() => {
     return companies.map(c => {
@@ -110,10 +122,10 @@ export default function Companies() {
                       {company.opps.map(opp => {
                         const stageStyle = getStageStyle(opp.Stage);
                         return (
-                          <div key={opp.id} style={{
+                          <div key={opp.id} onClick={() => navigate(`/opportunities/${opp.id}`)} className="fs-hover-lift" style={{
                             display: "flex", alignItems: "center", justifyContent: "space-between",
                             padding: "10px 14px", background: BRAND.white, borderRadius: 8,
-                            border: `1px solid ${BRAND.border}`,
+                            border: `1px solid ${BRAND.border}`, cursor: "pointer",
                           }}>
                             <div>
                               <div style={{ fontSize: 13, fontWeight: 600, color: BRAND.textPrimary }}>{opp.Name}</div>
@@ -145,10 +157,10 @@ export default function Companies() {
                       {company.jobs.map(job => {
                         const statusColor = job.Status === "On Track" ? BRAND.green : job.Status === "Delayed" ? BRAND.red : BRAND.amber;
                         return (
-                          <div key={job.id} style={{
+                          <div key={job.id} onClick={() => navigate(`/jobs/${job.id}`)} className="fs-hover-lift" style={{
                             display: "flex", alignItems: "center", justifyContent: "space-between",
                             padding: "10px 14px", background: BRAND.white, borderRadius: 8,
-                            border: `1px solid ${BRAND.border}`,
+                            border: `1px solid ${BRAND.border}`, cursor: "pointer",
                           }}>
                             <div>
                               <div style={{ fontSize: 13, fontWeight: 600, color: BRAND.textPrimary }}>{job.Name}</div>

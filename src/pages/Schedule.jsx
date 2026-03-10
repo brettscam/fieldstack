@@ -207,6 +207,78 @@ export default function Schedule() {
   const onTrackCount = jobGroups.filter(g => g.status === "On Track").length;
   const delayedCount = jobGroups.filter(g => g.status === "Delayed" || g.status === "At Risk").length;
 
+  // Risk detection
+  const risks = useMemo(() => {
+    const riskList = [];
+    const now = new Date();
+    jobGroups.forEach(group => {
+      const job = jobs.find(j => j.id === group.jobId);
+      if (!job) return;
+
+      // Behind schedule: In Progress phases past their end date
+      group.phases.forEach(phase => {
+        if (phase.Status === "In Progress" && new Date(phase.EndDate) < now) {
+          riskList.push({
+            type: "behind_schedule",
+            severity: "high",
+            job: job.Name,
+            jobId: job.id,
+            message: `"${phase.PhaseName}" is past due (ended ${new Date(phase.EndDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })})`,
+          });
+        }
+        // Not started but should have started
+        if (phase.Status === "Not Started" && new Date(phase.StartDate) < now) {
+          riskList.push({
+            type: "not_started",
+            severity: "medium",
+            job: job.Name,
+            jobId: job.id,
+            message: `"${phase.PhaseName}" should have started ${new Date(phase.StartDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+          });
+        }
+      });
+
+      // Overlapping phases (dependency risk)
+      const sortedPhases = [...group.phases].sort((a, b) => a.Order - b.Order);
+      for (let i = 1; i < sortedPhases.length; i++) {
+        const prev = sortedPhases[i - 1];
+        const curr = sortedPhases[i];
+        if (prev.Status !== "Completed" && curr.Status === "In Progress") {
+          riskList.push({
+            type: "dependency",
+            severity: "medium",
+            job: job.Name,
+            jobId: job.id,
+            message: `"${curr.PhaseName}" started before "${prev.PhaseName}" completed`,
+          });
+        }
+      }
+
+      // No crew assigned
+      if (!job.Crew) {
+        riskList.push({
+          type: "no_crew",
+          severity: "high",
+          job: job.Name,
+          jobId: job.id,
+          message: "No crew assigned",
+        });
+      }
+
+      // Job status is Delayed or At Risk
+      if (job.Status === "Delayed" || job.Status === "At Risk") {
+        riskList.push({
+          type: "status",
+          severity: job.Status === "Delayed" ? "high" : "medium",
+          job: job.Name,
+          jobId: job.id,
+          message: `Job is marked as ${job.Status}`,
+        });
+      }
+    });
+    return riskList;
+  }, [jobGroups, jobs]);
+
   // Milestones in view
   const visibleMilestones = useMemo(() => {
     return allMilestones.filter(ms => {
@@ -229,6 +301,55 @@ export default function Schedule() {
           </div>
         </div>
       </div>
+
+      {/* Risk indicators */}
+      {risks.length > 0 && (
+        <div style={{
+          background: BRAND.white, borderRadius: 14, border: `1px solid ${BRAND.border}`,
+          padding: "16px 20px", marginBottom: 16,
+          borderLeft: `4px solid ${risks.some(r => r.severity === "high") ? BRAND.red : BRAND.amber}`,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 6,
+              background: BRAND.redSoft, display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ fontSize: 12 }}>!</span>
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>
+              {risks.length} Risk{risks.length !== 1 ? "s" : ""} Detected
+            </span>
+            <span style={{ fontSize: 11, color: BRAND.textTertiary, fontFamily: FONT }}>
+              {risks.filter(r => r.severity === "high").length} high · {risks.filter(r => r.severity === "medium").length} medium
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {risks.slice(0, 5).map((risk, i) => (
+              <div key={i} onClick={() => navigate(`/jobs/${risk.jobId}`)} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                background: risk.severity === "high" ? BRAND.redSoft : BRAND.amberSoft,
+                borderRadius: 8, cursor: "pointer",
+              }} className="fs-hover-lift">
+                <div style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: risk.severity === "high" ? BRAND.red : BRAND.amber,
+                  flexShrink: 0,
+                }} />
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{risk.job}</span>
+                  <span style={{ fontSize: 11, color: BRAND.textSecondary, fontFamily: FONT, marginLeft: 6 }}>{risk.message}</span>
+                </div>
+                <Icons.ChevronRight size={14} color={BRAND.textTertiary} />
+              </div>
+            ))}
+            {risks.length > 5 && (
+              <div style={{ fontSize: 11, color: BRAND.textTertiary, fontFamily: FONT, textAlign: "center", padding: 4 }}>
+                +{risks.length - 5} more risks
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters row */}
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>

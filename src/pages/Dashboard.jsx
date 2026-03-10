@@ -504,7 +504,7 @@ export default function Dashboard() {
           {panel.data.map(opp => {
             const stageStyle = getStageStyle(opp.Stage);
             return (
-              <div key={opp.id} className="fs-hover-lift" onClick={() => { setPanel(null); navigate("/pipeline"); }} style={{
+              <div key={opp.id} className="fs-hover-lift" onClick={() => { setPanel(null); navigate(`/opportunities/${opp.id}`); }} style={{
                 padding: "14px 16px", borderRadius: 12, border: `1px solid ${BRAND.border}`,
                 marginBottom: 10, cursor: "pointer",
                 borderLeft: `3px solid ${stageStyle.color}`,
@@ -517,7 +517,11 @@ export default function Dashboard() {
                     padding: "2px 8px", borderRadius: 6,
                   }}>{opp.Stage}</span>
                 </div>
-                <div style={{ fontSize: 12, color: BRAND.textTertiary, fontFamily: FONT, marginTop: 2 }}>{opp.Company} · {opp.Contact}</div>
+                <div style={{ fontSize: 12, fontFamily: FONT, marginTop: 2 }}>
+                  <span onClick={(e) => { e.stopPropagation(); setPanel(null); navigate(`/companies?highlight=${encodeURIComponent(opp.Company)}`); }} style={{ color: BRAND.blue, cursor: "pointer" }}>{opp.Company}</span>
+                  <span style={{ color: BRAND.textTertiary }}> · </span>
+                  <span onClick={(e) => { e.stopPropagation(); setPanel(null); navigate(`/contacts?search=${encodeURIComponent(opp.Contact)}`); }} style={{ color: BRAND.blue, cursor: "pointer" }}>{opp.Contact}</span>
+                </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: BRAND.textPrimary, fontFamily: FONT }}>{formatFullCurrency(opp.Value)}</span>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -555,12 +559,13 @@ export default function Dashboard() {
                   <span style={{ fontSize: 12, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT }}>{items.length} · {formatFullCurrency(total)}</span>
                 </div>
                 {items.map(opp => (
-                  <div key={opp.id} style={{
+                  <div key={opp.id} onClick={() => { setPanel(null); navigate(`/opportunities/${opp.id}`); }} style={{
                     padding: "8px 12px", marginBottom: 4, borderRadius: 8,
                     background: BRAND.surface, fontSize: 12, fontFamily: FONT,
                     display: "flex", justifyContent: "space-between",
-                  }}>
-                    <span style={{ fontWeight: 600, color: BRAND.textPrimary }}>{opp.Name}</span>
+                    cursor: "pointer",
+                  }} className="fs-hover-lift">
+                    <span style={{ fontWeight: 600, color: BRAND.blue }}>{opp.Name}</span>
                     <span style={{ fontWeight: 700, color: BRAND.textPrimary }}>{formatFullCurrency(opp.Value)}</span>
                   </div>
                 ))}
@@ -585,11 +590,11 @@ export default function Dashboard() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT }}>Company</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{opp.Company}</div>
+                    <div onClick={() => { setPanel(null); navigate(`/companies?highlight=${encodeURIComponent(opp.Company)}`); }} style={{ fontSize: 14, fontWeight: 600, color: BRAND.blue, fontFamily: FONT, cursor: "pointer" }}>{opp.Company}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: BRAND.textTertiary, fontFamily: FONT }}>Contact</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: BRAND.textPrimary, fontFamily: FONT }}>{opp.Contact}</div>
+                    <div onClick={() => { setPanel(null); navigate(`/contacts?search=${encodeURIComponent(opp.Contact)}`); }} style={{ fontSize: 14, fontWeight: 600, color: BRAND.blue, fontFamily: FONT, cursor: "pointer" }}>{opp.Contact}</div>
                   </div>
                   <div style={{ display: "flex", gap: 20 }}>
                     <div>
@@ -618,11 +623,11 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => { setPanel(null); navigate("/pipeline"); }} style={{
+                <button onClick={() => { setPanel(null); navigate(`/opportunities/${opp.id}`); }} style={{
                   width: "100%", padding: "10px", borderRadius: 10, border: "none",
                   background: BRAND.blue, color: BRAND.white, fontSize: 13,
                   fontWeight: 600, fontFamily: FONT, cursor: "pointer",
-                }}>View in Pipeline</button>
+                }}>View Full Details</button>
               </div>
             );
           })()}
